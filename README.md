@@ -108,35 +108,6 @@ Personal-AI-Assistant/
    npm install
    ```
 
-5. **Environment Configuration**
-   
-   Create `.env` file in the backend directory using `.env.example` as template:
-   ```env
-   # Database
-   MONGO_URI=mongodb://localhost:27017/talentalign
-   
-   # JWT
-   JWT_SECRET=your_jwt_secret_here
-   
-   # Email Configuration
-   EMAIL_USER=your_gmail_address@gmail.com
-   EMAIL_PASS=your_gmail_app_password
-   EMAIL_HOST=smtp.gmail.com
-   EMAIL_PORT=587
-   
-   # ImageKit Configuration
-   IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
-   IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-   IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
-   IMAGEKIT_UPLOAD_FOLDER=your_upload_folder
-   
-   # AI Configuration
-   GEMINI_API_KEY=your_gemini_api_key
-   
-   # Server
-   PORT=5000
-   ```
-
 ### Running the Application
 
 1. **Development Mode (Recommended)**
@@ -232,10 +203,6 @@ Personal-AI-Assistant/
 ## 📝 License
 
 This project is licensed under the ISC License.
-
-## 🆘 Support
-
-For support, email [your-email] or create an issue in the repository.
 
 ## 🔮 Future Enhancements
 
