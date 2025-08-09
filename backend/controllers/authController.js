@@ -16,7 +16,7 @@ const registerUser = async (req, res) => {
         password, 
         skills, 
         experience, 
-        role, 
+        role,
         linkedin, 
         github, 
         portfolio 
@@ -145,6 +145,7 @@ const updateUserProfile = async (req, res) => {
         const user = await User.findById(req.user.id);
 
         if (user) {
+            user.name = req.body.name || user.name;
             user.skills = req.body.skills || user.skills;
             user.experience = req.body.experience || user.experience;
             user.role = req.body.role || user.role;

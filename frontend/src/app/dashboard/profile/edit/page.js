@@ -7,12 +7,17 @@ import AuthGuard from "@/utils/authGuard";
 import { getToken } from "@/services/authService";
 import axios from "axios";
 import { loginSuccess } from "@/redux/slices/authSlice";
+import Navbar from "@/components/components/Navbar";
+import Breadcrumb from "@/components/Breadcrumb";
+import DashboardNav from "@/components/DashboardNav";
+
 
 export default function EditProfilePage() {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   
@@ -54,12 +59,15 @@ export default function EditProfilePage() {
       // Convert comma-separated skills to array
       const processedData = {
         ...formData,
-        skills: formData.skills.split(",").map(skill => skill.trim()).filter(Boolean)
+        skills: formData.skills ? formData.skills.split(",").map(skill => skill.trim()).filter(Boolean) : []
       };
+
+      console.log("Updating profile with data:", processedData);
 
       const config = {
         headers: {
           Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       };
 
@@ -68,6 +76,8 @@ export default function EditProfilePage() {
         processedData, 
         config
       );
+
+      console.log("Profile update response:", response.data);
 
       // Update user in Redux state
       if (response.data.success) {
@@ -86,7 +96,7 @@ export default function EditProfilePage() {
           localStorage.setItem('userData', JSON.stringify(userData));
         }
 
-        setSuccess("Profile updated successfully");
+        setSuccess("Profile updated successfully!");
         
         // Redirect back to profile page after brief delay
         setTimeout(() => {
@@ -95,29 +105,73 @@ export default function EditProfilePage() {
       }
     } catch (err) {
       console.error("Profile update error:", err);
-      setError(err.response?.data?.message || "Failed to update profile");
+      console.error("Error response:", err.response);
+      console.error("Error status:", err.response?.status);
+      console.error("Error data:", err.response?.data);
+      
+      let errorMessage = "Failed to update profile. Please try again.";
+      
+      if (err.response?.status === 401) {
+        errorMessage = "Authentication failed. Please log in again.";
+      } else if (err.response?.status === 400) {
+        errorMessage = err.response?.data?.message || "Invalid profile data. Please check your inputs.";
+      } else if (err.response?.status === 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = `Network error: ${err.message}`;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   return (
     <AuthGuard>
-      <div className="p-6 text-black bg-white">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-3xl font-bold">Edit Profile</h1>
-          <button 
-            onClick={() => router.push("/dashboard/profile")}
-            className="text-blue-600 hover:underline"
-          >
-            Back to Profile
-          </button>
-        </div>
+      <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+      <div className="min-h-screen bg-gray-50 p-6 text-black">
+        <div className="max-w-4xl mx-auto">
+          {/* Breadcrumb Navigation */}
+          <Breadcrumb 
+            items={[
+              { label: "Dashboard", href: "/dashboard" },
+              { label: "Profile", href: "/dashboard/profile" },
+              { label: "Edit Profile", href: null }
+            ]} 
+          />
+          
+          {/* Dashboard Navigation */}
+          <DashboardNav />
+          
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold text-black">Edit Profile</h1>
+            <button 
+              onClick={() => router.push("/dashboard/profile")}
+              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+            >
+              Back to Profile
+            </button>
+          </div>
 
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        {success && <p className="text-green-500 mb-4">{success}</p>}
-        
-        <form onSubmit={handleSubmit} className="bg-white border rounded-xl p-6 shadow">
+          {/* Error and Success Messages */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-lime-50 border border-lime-200 text-green-800 px-4 py-3 rounded-lg mb-6">
+              {success}
+            </div>
+          )}
+          <form onSubmit={handleSubmit} className="bg-white border rounded-xl p-6 shadow-lg">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
               <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="name">
@@ -129,7 +183,7 @@ export default function EditProfilePage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
             
@@ -142,7 +196,7 @@ export default function EditProfilePage() {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               >
                 <option value="">Select a role</option>
                 <option value="Software Engineer">Software Engineer</option>
@@ -166,7 +220,7 @@ export default function EditProfilePage() {
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
             
@@ -180,7 +234,7 @@ export default function EditProfilePage() {
                 name="education"
                 value={formData.education}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
             
@@ -194,7 +248,7 @@ export default function EditProfilePage() {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
             
@@ -208,7 +262,7 @@ export default function EditProfilePage() {
                 name="skills"
                 value={formData.skills}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
                 placeholder="React, Node.js, JavaScript"
               />
             </div>
@@ -223,7 +277,7 @@ export default function EditProfilePage() {
                 name="github"
                 value={formData.github}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
             
@@ -237,7 +291,7 @@ export default function EditProfilePage() {
                 name="linkedin"
                 value={formData.linkedin}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
             
@@ -251,7 +305,7 @@ export default function EditProfilePage() {
                 name="portfolio"
                 value={formData.portfolio}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
               />
             </div>
           </div>
@@ -266,20 +320,30 @@ export default function EditProfilePage() {
               value={formData.aboutMe}
               onChange={handleChange}
               rows="4"
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
             ></textarea>
           </div>
           
           <div className="mt-6">
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-              disabled={loading}
-            >
-              {loading ? "Updating..." : "Save Changes"}
-            </button>
+            <div className="flex gap-4">
+              <button
+                type="submit"
+                className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lime-300 focus:ring-offset-2 transition-colors duration-200 font-medium"
+                disabled={loading}
+              >
+                {loading ? "Updating..." : "Save Changes"}
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push("/dashboard/profile")}
+                className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        </form>
+          </form>
+        </div>
       </div>
     </AuthGuard>
   );

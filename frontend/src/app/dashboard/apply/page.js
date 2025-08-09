@@ -9,6 +9,10 @@ import { trackJobApplication } from "@/services/applicationService";
 
 // Import the getToken function
 import { getToken } from "@/services/authService";
+import { useToast, ToastContainer } from "@/components/Toast";
+import Navbar from "@/components/components/Navbar";
+import Breadcrumb from "@/components/Breadcrumb";
+import DashboardNav from "@/components/DashboardNav";
 
 // Loading component for Suspense fallback
 function LoadingState() {
@@ -29,6 +33,9 @@ function ApplyPageContent() {
   const [error, setError] = useState("");
   const [hasApplied, setHasApplied] = useState(false);
   const [applicationTracking, setApplicationTracking] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const { toasts, removeToast, showSuccess, showError, showWarning } = useToast();
 
   useEffect(() => {
     const getJobById = async () => {
@@ -38,7 +45,7 @@ function ApplyPageContent() {
         const foundJob = res.jobs.find((j) => j._id === jobId);
         setJob(foundJob);
       } catch (err) {
-        setError("Failed to load job.");
+        showError("Failed to load job details. Please try again.");
       }
     };
 
@@ -54,7 +61,7 @@ function ApplyPageContent() {
     const token = getToken() || user?.token;
     
     if (!token) {
-      setError("You must be logged in to generate a cover letter");
+      showError("You must be logged in to generate a cover letter");
       setLoading(false);
       return;
     }
@@ -70,9 +77,11 @@ function ApplyPageContent() {
     try {
       const letter = await generateCoverLetter(payload, token);
       setCoverLetter(letter);
+      showSuccess("Cover letter generated successfully!");
     } catch (err) {
       console.error("Cover letter generation error:", err);
-      setError("Error generating cover letter. Please ensure you're logged in.");
+      // Use the specific error message from the service
+      showError(err.message || "Error generating cover letter. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +93,7 @@ function ApplyPageContent() {
     try {
       const token = getToken();
       if (!token) {
-        setError("You must be logged in to track your application");
+        showError("You must be logged in to track your application");
         return;
       }
 
@@ -99,9 +108,10 @@ function ApplyPageContent() {
       });
 
       setHasApplied(applied);
+      showSuccess("Application status updated successfully!");
     } catch (err) {
       console.error("Application tracking error:", err);
-      setError("Failed to track your application status");
+      showError("Failed to track your application status");
     } finally {
       setApplicationTracking(false);
     }
@@ -112,38 +122,61 @@ function ApplyPageContent() {
     if (job && job.apply_link) {
       window.open(job.apply_link, '_blank');
       
-      // Show application tracking options after opening the link
+      // Show confirmation dialog after a short delay
       setTimeout(() => {
-        setHasApplied(true);
-        handleApplicationTracking(true);
-      }, 1000);
+        setShowConfirmation(true);
+      }, 2000); // Give user time to see the external site
     }
   };
 
-  return (
-    <div className="p-6 text-black bg-white">
-      <h1 className="text-3xl font-bold mb-4">Job Application</h1>
+  const handleConfirmApplication = (applied) => {
+    setShowConfirmation(false);
+    if (applied) {
+      setHasApplied(true);
+      handleApplicationTracking(true);
+    }
+  };
 
-      {error && <p className="text-red-500">{error}</p>}
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  return (
+    <>
+      <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
+    <div className="min-h-screen bg-gray-50 p-6 text-black">
+      <div className="max-w-4xl mx-auto">
+        {/* Breadcrumb Navigation */}
+        <Breadcrumb 
+          items={[
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Apply", href: null }
+          ]} 
+        />
+        
+        {/* Dashboard Navigation */}
+        <DashboardNav />
+        
+        <h1 className="text-3xl font-bold mb-6 text-black">TalentAlign Job Application</h1>
 
       {!job ? (
         <p>Loading job details...</p>
       ) : (
-        <div className="border rounded-xl p-6 shadow space-y-3">
-          <h2 className="text-2xl font-semibold">{job.title}</h2>
+        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-lg space-y-4">
+          <h2 className="text-2xl font-semibold text-black">{job.title}</h2>
           <p className="text-gray-700">{job.company}</p>
           <p className="text-gray-600">{job.location}</p>
           
           {job.apply_link && !hasApplied ? (
             <button 
               onClick={handleApplyNow}
-              className="mt-4 bg-blue-600 m-4 text-white px-4 py-2 rounded hover:bg-blue-700"
+              className="mt-4 bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
               disabled={applicationTracking}
             >
               Apply Now
             </button>
           ) : hasApplied ? (
-            <div className="mt-4 p-2 bg-green-100 text-green-700 rounded">
+            <div className="mt-4 p-3 bg-lime-100 border border-lime-200 text-gray-800 rounded-md">
               You have applied to this job
             </div>
           ) : null}
@@ -152,21 +185,57 @@ function ApplyPageContent() {
 
           <button
             onClick={handleGenerateCoverLetter}
-            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="mt-4 bg-black text-white px-6 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
             disabled={loading}
           >
             {loading ? "Generating..." : "Generate Cover Letter"}
           </button>
 
           {coverLetter && (
-            <div className="mt-6 bg-gray-100 p-4 rounded whitespace-pre-wrap">
-              <h3 className="text-lg font-semibold mb-2">Generated Cover Letter</h3>
+            <div className="mt-6 bg-lime-50 border border-lime-200 p-4 rounded-md whitespace-pre-wrap">
+              <h3 className="text-lg font-semibold mb-3 text-black">Generated Cover Letter</h3>
               {coverLetter}
             </div>
           )}
         </div>
       )}
+
+      {/* Application Confirmation Modal */}
+      {showConfirmation && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4 shadow-xl">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-lime-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-black font-bold text-xl">?</span>
+              </div>
+              <h3 className="text-xl font-semibold text-black mb-2">Application Status</h3>
+              <p className="text-gray-600 mb-6">
+                Have you completed your application for this job?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleConfirmApplication(true)}
+                  className="flex-1 bg-lime-500 text-white py-3 px-4 rounded-lg hover:bg-lime-600 transition-colors duration-200 font-semibold"
+                  disabled={applicationTracking}
+                >
+                  {applicationTracking ? "Tracking..." : "Yes, I Applied"}
+                </button>
+                <button
+                  onClick={() => handleConfirmApplication(false)}
+                  className="flex-1 bg-gray-500 text-white py-3 px-4 rounded-lg hover:bg-gray-600 transition-colors duration-200 font-semibold"
+                >
+                  Not Yet
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
+      </div>
     </div>
+    </>
   );
 }
 

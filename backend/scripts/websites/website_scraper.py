@@ -39,7 +39,7 @@ jobs_container = driver.find_elements(By.XPATH, '//ul[@class="ui-content search-
 # Initialize list for storing job details
 jobs_data = []
 
-print("\n📌 **Extracted Job Listings**:\n")
+print("\n **Extracted Job Listings**:\n")
 
 for i, job in enumerate(jobs_container, 1):
     try:
@@ -92,10 +92,10 @@ for i, job in enumerate(jobs_container, 1):
 
         # Print job details
         print(f"{i}. {job_title} at {company_name}")
-        print(f"   📍 {job_location} | 🏢 {experience} experience | 💰 {salary}")
-        print(f"   📝 Key Skills: {skills}")
-        print(f"   🎯 Apply Here: {apply_link}")
-        print(f"   📆 Posted: {post_time}\n")
+        print(f"   {job_location} | {experience} experience | {salary}")
+        print(f"   Key Skills: {skills}")
+        print(f"   Apply Here: {apply_link}")
+        print(f"   Posted: {post_time}\n")
 
     except Exception as e:
         print(f"Error extracting job {i}: {str(e)}\n")
@@ -103,7 +103,7 @@ for i, job in enumerate(jobs_container, 1):
 # Save job postings to MongoDB
 if jobs_data:
     result = collection.insert_many(jobs_data)
-    print(f"\n✅ {len(result.inserted_ids)} job records saved to MongoDB (scrapjobs collection)\n")
+    print(f"\n {len(result.inserted_ids)} job records saved to MongoDB (scrapjobs collection)\n")
 else:
     print("\n⚠ No jobs found, nothing inserted into MongoDB.\n")
 

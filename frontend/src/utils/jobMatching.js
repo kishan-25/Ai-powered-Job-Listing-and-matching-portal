@@ -1,5 +1,3 @@
-// jobMatching.js
-
 /**
  * Extract potential skills from a text using NLP techniques
  * @param {string} text - Text to extract skills from
@@ -8,7 +6,6 @@
 function extractSkills(text) {
   if (!text) return [];
   
-  // Common tech skills and keywords to look for
   const commonSkills = [
       'javascript', 'python', 'java', 'c#', 'ruby', 'php', 'swift', 'kotlin',
       'typescript', 'html', 'css', 'react', 'angular', 'vue', 'node', 'express',
@@ -115,7 +112,6 @@ function extractSkills(text) {
   });
   
   // Find multi-word skills like "machine learning"
-  // This pattern needs to be enhanced based on your specific needs
   return foundSkills;
 }
 

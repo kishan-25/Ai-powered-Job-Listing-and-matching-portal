@@ -12,7 +12,7 @@ config_path = os.path.join(script_dir, "telethon.config")
 
 # Check if config file exists
 if not os.path.exists(config_path):
-    print(f"❌ Config file not found at: {config_path}")
+    print(f" Config file not found at: {config_path}")
     sys.exit(1)
 
 try:
@@ -23,9 +23,9 @@ try:
     api_id = config["telethon_credentials"]["api_id"]
     api_hash = config["telethon_credentials"]["api_hash"]
     
-    print(f"✅ Successfully loaded API credentials")
+    print(f" Successfully loaded API credentials")
 except Exception as e:
-    print(f"❌ Error loading config: {str(e)}")
+    print(f" Error loading config: {str(e)}")
     sys.exit(1)
 
 # Define chat/group name
@@ -303,8 +303,8 @@ except Exception as e:
 if job_posts:
     try:
         result = collection.insert_many(job_posts)
-        print(f"\n✅ {len(result.inserted_ids)} Telegram job records saved to MongoDB (telegram collection)\n")
+        print(f"\n {len(result.inserted_ids)} Telegram job records saved to MongoDB (telegram collection)\n")
     except Exception as e:
-        print(f"\n❌ Error inserting data into MongoDB: {str(e)}\n")
+        print(f"\n Error inserting data into MongoDB: {str(e)}\n")
 else:
     print("\n⚠ No Telegram job posts found, nothing inserted into MongoDB.\n")

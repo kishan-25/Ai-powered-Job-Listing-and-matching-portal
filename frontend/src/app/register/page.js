@@ -162,41 +162,48 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 bg-white rounded-lg shadow-lg my-10 text-black">
-      {/* Add Toaster component to render the toasts */}
-      <Toaster position="top-right" toastOptions={{
-        duration: 4000,
-        style: {
-          background: '#363636',
-          color: '#fff',
-        },
-        success: {
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8 border border-gray-200 text-black">
+        {/* Add Toaster component to render the toasts */}
+        <Toaster position="top-right" toastOptions={{
+          duration: 4000,
           style: {
-            background: 'green',
+            background: '#363636',
+            color: '#fff',
           },
-        },
-        error: {
-          style: {
-            background: 'red',
+          success: {
+            style: {
+              background: '#84cc16',
+            },
           },
-        },
-      }} />
-      
-      <h1 className="text-2xl font-bold mb-6 text-center">Create Your Account</h1>
-      
-      <form onSubmit={handleRegister} className="space-y-4">
-        {/* Resume Upload Component */}
-        <ResumeUploadComponent onParseSuccess={handleParseSuccess} />
+          error: {
+            style: {
+              background: '#ef4444',
+            },
+          },
+        }} />
         
-        {/* Name Field */}
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 bg-lime-300 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-black font-bold text-xl">T</span>
+          </div>
+          <h1 className="text-3xl font-bold text-black mb-2">Join TalentAlign</h1>
+          <p className="text-gray-600">Create your account to start finding your perfect job match</p>
+        </div>
+        
+        <form onSubmit={handleRegister} className="space-y-6">
+          {/* Resume Upload Component */}
+          <ResumeUploadComponent onParseSuccess={handleParseSuccess} />
+          
+          {/* Name Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Full Name</label>
+          <label className="block text-sm font-semibold text-black mb-2">Full Name</label>
           <input
             type="text"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.name ? "border-red-500" : ""
             }`}
           />
@@ -205,13 +212,13 @@ export default function RegisterPage() {
         
         {/* Email Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Email</label>
+          <label className="block text-sm font-semibold text-black mb-2">Email Address</label>
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.email ? "border-red-500" : ""
             }`}
           />
@@ -220,13 +227,13 @@ export default function RegisterPage() {
         
         {/* Password Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Password</label>
+          <label className="block text-sm font-semibold text-black mb-2">Password</label>
           <input
             type="password"
             name="password"
             value={formData.password}
             onChange={handleChange}
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.password ? "border-red-500" : ""
             }`}
           />
@@ -235,7 +242,7 @@ export default function RegisterPage() {
         
         {/* Skills Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Skills</label>
+          <label className="block text-sm font-semibold text-black mb-2">Skills</label>
           <div className="flex mb-2">
             <input
               type="text"
@@ -246,13 +253,13 @@ export default function RegisterPage() {
                   addSkill(e);
                 }
               }}
-              className="flex-grow px-3 py-2 border rounded-l-md"
+              className="flex-grow px-4 py-3 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors"
               placeholder="Add skill"
             />
             <button
               type="button"
               onClick={addSkill}
-              className="bg-blue-500 text-white px-4 py-2 rounded-r-md"
+              className="bg-black text-white px-6 py-3 rounded-r-lg hover:bg-gray-800 transition-colors duration-200 font-semibold"
             >
               Add
             </button>
@@ -261,7 +268,7 @@ export default function RegisterPage() {
             {formData.skills.map((skill, index) => (
               <div
                 key={index}
-                className="bg-gray-100 px-3 py-1 rounded-full flex items-center"
+                className="bg-lime-100 border border-lime-300 px-3 py-1 rounded-full flex items-center"
               >
                 <span>{skill}</span>
                 <button
@@ -278,14 +285,14 @@ export default function RegisterPage() {
         
         {/* Experience Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Years of Experience</label>
+          <label className="block text-sm font-semibold text-black mb-2">Years of Experience</label>
           <input
             type="number"
             name="experience"
             value={formData.experience}
             onChange={handleChange}
             min="0"
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.experience ? "border-red-500" : ""
             }`}
           />
@@ -294,12 +301,12 @@ export default function RegisterPage() {
         
         {/* Role Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Preferred Role</label>
+          <label className="block text-sm font-semibold text-black mb-2">Preferred Role</label>
           <select
             name="role"
             value={formData.role}
             onChange={handleChange}
-            className="w-full px-3 py-2 border rounded-md"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors"
           >
             <option value="Software Engineer">Software Engineer</option>
             <option value="Frontend Developer">Frontend Developer</option>
@@ -310,14 +317,14 @@ export default function RegisterPage() {
         
         {/* LinkedIn Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">LinkedIn</label>
+          <label className="block text-sm font-semibold text-black mb-2">LinkedIn Profile</label>
           <input
             type="url"
             name="linkedin"
             value={formData.linkedin}
             onChange={handleChange}
             placeholder="https://linkedin.com/in/yourprofile"
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.linkedin ? "border-red-500" : ""
             }`}
           />
@@ -326,14 +333,14 @@ export default function RegisterPage() {
         
         {/* GitHub Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">GitHub</label>
+          <label className="block text-sm font-semibold text-black mb-2">GitHub Profile</label>
           <input
             type="url"
             name="github"
             value={formData.github}
             onChange={handleChange}
             placeholder="https://github.com/yourusername"
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.github ? "border-red-500" : ""
             }`}
           />
@@ -342,14 +349,14 @@ export default function RegisterPage() {
         
         {/* Portfolio Field */}
         <div>
-          <label className="block text-sm font-medium mb-1">Portfolio</label>
+          <label className="block text-sm font-semibold text-black mb-2">Portfolio Website</label>
           <input
             type="url"
             name="portfolio"
             value={formData.portfolio}
             onChange={handleChange}
             placeholder="https://yourportfolio.com"
-            className={`w-full px-3 py-2 border rounded-md ${
+            className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors ${
               errors.portfolio ? "border-red-500" : ""
             }`}
           />
@@ -359,21 +366,21 @@ export default function RegisterPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          className={`w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors ${
+          className={`w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-semibold ${
             loading ? "opacity-70 cursor-not-allowed" : ""
           }`}
           disabled={loading}
         >
           {loading ? "Creating Account..." : "Create Account"}
         </button>
-      </form>
-      
-      <p className="mt-4 text-center">
-        Already have an account? {" "}
-        <Link href="/login" className="text-blue-600 hover:underline">
-          Log in
-        </Link>
-      </p>
+        </form>
+        
+        <div className="mt-8 text-center">
+          <p className="text-gray-600">
+            Already have an account? <Link href="/login" className="text-black hover:text-gray-700 font-semibold">Sign in here</Link>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

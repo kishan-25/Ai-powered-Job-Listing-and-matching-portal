@@ -12,7 +12,7 @@ config_path = os.path.join(script_dir, "telethon.config")
 
 # Check if config file exists
 if not os.path.exists(config_path):
-    print(f"❌ Config file not found at: {config_path}")
+    print(f" Config file not found at: {config_path}")
     sys.exit(1)
 
 try:
@@ -23,9 +23,9 @@ try:
     api_id = config["telethon_credentials"]["api_id"]
     api_hash = config["telethon_credentials"]["api_hash"]
     
-    print(f"✅ Successfully loaded API credentials")
+    print(f" Successfully loaded API credentials")
 except Exception as e:
-    print(f"❌ Error loading config: {str(e)}")
+    print(f" Error loading config: {str(e)}")
     sys.exit(1)
 
 # Define chat/group name
@@ -142,9 +142,9 @@ try:
     mongo_client = MongoClient("mongodb+srv://bkbajpay0609:uv52KtpB09m1maFN@cluster0.xflo7xo.mongodb.net/")
     db = mongo_client["test"]
     collection = db["telegram"]
-    print(f"✅ Successfully connected to MongoDB")
+    print(f" Successfully connected to MongoDB")
 except Exception as e:
-    print(f"❌ Error connecting to MongoDB: {str(e)}")
+    print(f" Error connecting to MongoDB: {str(e)}")
     sys.exit(1)
 
 # Job posts to insert into MongoDB
@@ -154,17 +154,17 @@ skipped_count = 0
 
 try:
     # Connect to Telegram Client
-    print(f"🔄 Connecting to Telegram with API ID: {api_id[:3]}...{api_id[-3:] if len(api_id) > 6 else api_id}")
+    print(f" Connecting to Telegram with API ID: {api_id[:3]}...{api_id[-3:] if len(api_id) > 6 else api_id}")
     
     with TelegramClient('test', api_id, api_hash) as client:
-        print(f"✅ Successfully connected to Telegram client")
+        print(f" Successfully connected to Telegram client")
         
         for chat in chats:
-            print(f"🔍 Searching for chat: {chat}")
+            print(f" Searching for chat: {chat}")
             try:
                 # Check if the chat exists
                 entity = client.get_entity(chat)
-                print(f"✅ Found chat: {entity.title if hasattr(entity, 'title') else chat}")
+                print(f" Found chat: {entity.title if hasattr(entity, 'title') else chat}")
                 
                 # Get messages
                 message_count = 0
@@ -228,21 +228,21 @@ try:
                     
                     job_posts.append(data)
                 
-                print(f"📊 Found {message_count} messages in chat {chat}")
-                print(f"📊 Processed {processed_count} job posts, skipped {skipped_count} messages")
+                print(f" Found {message_count} messages in chat {chat}")
+                print(f" Processed {processed_count} job posts, skipped {skipped_count} messages")
                 
             except Exception as e:
-                print(f"❌ Error processing chat {chat}: {str(e)}")
+                print(f" Error processing chat {chat}: {str(e)}")
                 
 except Exception as e:
-    print(f"❌ Error connecting to Telegram: {str(e)}")
+    print(f" Error connecting to Telegram: {str(e)}")
 
 # Insert into MongoDB
 if job_posts:
     try:
         result = collection.insert_many(job_posts)
-        print(f"\n✅ {len(result.inserted_ids)} Telegram job records saved to MongoDB (telegram collection)\n")
+        print(f"\n {len(result.inserted_ids)} Telegram job records saved to MongoDB (telegram collection)\n")
     except Exception as e:
-        print(f"\n❌ Error inserting data into MongoDB: {str(e)}\n") 
+        print(f"\n Error inserting data into MongoDB: {str(e)}\n") 
 else:
     print("\n⚠ No Telegram job posts found, nothing inserted into MongoDB.\n")

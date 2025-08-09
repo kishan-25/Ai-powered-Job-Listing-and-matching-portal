@@ -8,7 +8,9 @@ import AuthGuard from "@/utils/authGuard";
 import { fetchTelegramJobs, fetchTimesJobs } from "@/services/jobService";
 import { calculateJobSkillMatch, getMatchColor, getMatchStrength } from "@/utils/jobMatching";
 import { getUserFromLocalStorage } from "@/services/authService";
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/components/Navbar";
+import Breadcrumb from "@/components/Breadcrumb";
+import DashboardNav from "@/components/DashboardNav";
 
 export default function DashboardPage() {
     const [telegramJobs, setTelegramJobs] = useState([]);
@@ -16,6 +18,12 @@ export default function DashboardPage() {
     const [activeTab, setActiveTab] = useState("times");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [darkMode, setDarkMode] = useState(false);
+    
+    // Pagination state
+    const [currentTelegramPage, setCurrentTelegramPage] = useState(1);
+    const [currentTimesPage, setCurrentTimesPage] = useState(1);
+    const jobsPerPage = 6;
     
     const dispatch = useDispatch();
     const router = useRouter();
@@ -27,6 +35,29 @@ export default function DashboardPage() {
     const handleLogout = () => {
         dispatch(logout());
         router.push("/");
+    };
+
+    const toggleDarkMode = () => {
+        setDarkMode(!darkMode);
+    };
+
+    // Pagination functions
+    const getCurrentPageJobs = (jobs, currentPage) => {
+        const indexOfLastJob = currentPage * jobsPerPage;
+        const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+        return jobs.slice(indexOfFirstJob, indexOfLastJob);
+    };
+
+    const getTotalPages = (jobs) => {
+        return Math.ceil(jobs.length / jobsPerPage);
+    };
+
+    const handlePageChange = (pageNumber, jobType) => {
+        if (jobType === 'telegram') {
+            setCurrentTelegramPage(pageNumber);
+        } else {
+            setCurrentTimesPage(pageNumber);
+        }
     };
 
     // Using correct job skill matching logic
@@ -101,9 +132,9 @@ export default function DashboardPage() {
 
     const renderJobCard = (job, source) => {
         return (
-            <div className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow">
+            <div className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-lime-300">
                 <div className="flex justify-between">
-                    <h3 className="font-semibold text-lg">{job.title || "No title"}</h3>
+                    <h3 className="font-semibold text-lg text-black">{job.title || "No title"}</h3>
                     <div className="flex flex-col items-end">
                         <div className={`${getMatchColor(job.matchPercentage)} font-bold text-lg`}>
                             {job.matchPercentage}% Match
@@ -143,7 +174,7 @@ export default function DashboardPage() {
                 <div className="mt-4 flex justify-end">
                     <button 
                         onClick={() => router.push(`/dashboard/apply?jobId=${job._id}&source=${source}`)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
                     >
                         Apply Now
                     </button>
@@ -152,31 +183,94 @@ export default function DashboardPage() {
         );
     };
 
+    const renderPagination = (totalJobs, currentPage, jobType) => {
+        const totalPages = getTotalPages(totalJobs);
+        
+        if (totalPages <= 1) return null;
+
+        const pageNumbers = [];
+        for (let i = 1; i <= totalPages; i++) {
+            pageNumbers.push(i);
+        }
+
+        return (
+            <div className="flex justify-center items-center space-x-2 mt-8">
+                <button
+                    onClick={() => handlePageChange(currentPage - 1, jobType)}
+                    disabled={currentPage === 1}
+                    className={`px-3 py-2 rounded-md ${
+                        currentPage === 1
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-white border border-gray-300 text-black hover:bg-lime-50 hover:border-lime-300'
+                    } transition-colors duration-200`}
+                >
+                    Previous
+                </button>
+                
+                {pageNumbers.map((number) => (
+                    <button
+                        key={number}
+                        onClick={() => handlePageChange(number, jobType)}
+                        className={`px-3 py-2 rounded-md ${
+                            currentPage === number
+                                ? 'bg-lime-300 text-black font-semibold'
+                                : 'bg-white border border-gray-300 text-black hover:bg-lime-50 hover:border-lime-300'
+                        } transition-colors duration-200`}
+                    >
+                        {number}
+                    </button>
+                ))}
+                
+                <button
+                    onClick={() => handlePageChange(currentPage + 1, jobType)}
+                    disabled={currentPage === totalPages}
+                    className={`px-3 py-2 rounded-md ${
+                        currentPage === totalPages
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-white border border-gray-300 text-black hover:bg-lime-50 hover:border-lime-300'
+                    } transition-colors duration-200`}
+                >
+                    Next
+                </button>
+            </div>
+        );
+    };
+
     return (
         <AuthGuard>
-            <Navbar/>
+            <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
             <div className="min-h-screen bg-gray-50 text-black">
-                <header className="bg-white shadow-sm">
+                <header className="bg-lime-300 shadow-sm">
                     <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
                         <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-gray-900">Job Dashboard</h1>
+                            <h1 className="text-2xl font-bold text-black">TalentAlign Dashboard</h1>
                         </div>
                     </div>
                 </header>
 
                 <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {/* Breadcrumb Navigation */}
+                    <Breadcrumb 
+                        items={[
+                            { label: "Dashboard", href: null }
+                        ]} 
+                    />
+                    
+                    {/* Dashboard Navigation */}
+                    <DashboardNav />
+                    
                     {/* Welcome section with user info */}
-                    <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                        <h2 className="text-xl font-semibold">Welcome, {userData?.name || "User"}!</h2>
+                    <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-200">
+                        <h2 className="text-xl font-semibold text-black">Welcome, {userData?.name || "User"}!</h2>
                         <p className="mt-2 text-gray-600">
                             We have found jobs matching your skills: {userData?.skills?.join(", ") || "No skills added yet"}
                         </p>
                         {(!userData?.skills || userData.skills.length === 0) && (
-                            <div className="mt-4 p-4 bg-yellow-50 text-yellow-700 rounded-md">
+                            <div className="mt-4 p-4 bg-lime-50 border border-lime-200 text-gray-800 rounded-md">
                                 <p>Add skills to your profile to get better job matches!</p>
                                 <button 
                                     onClick={() => router.push("/dashboard/profile")}
-                                    className="mt-2 text-blue-600 hover:underline"
+                                    className="mt-2 text-black hover:text-gray-700 font-medium"
                                 >
                                     Update Profile
                                 </button>
@@ -192,8 +286,8 @@ export default function DashboardPage() {
                                     onClick={() => setActiveTab("telegram")}
                                     className={`${
                                         activeTab === "telegram"
-                                            ? "border-blue-500 text-blue-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                            ? "border-black text-black bg-lime-100"
+                                            : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
                                     } w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm sm:text-base`}
                                 >
                                     Telegram Jobs
@@ -202,8 +296,8 @@ export default function DashboardPage() {
                                     onClick={() => setActiveTab("times")}
                                     className={`${
                                         activeTab === "times"
-                                            ? "border-blue-500 text-blue-600"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                                            ? "border-black text-black bg-lime-100"
+                                            : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
                                     } w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm sm:text-base`}
                                 >
                                     Web Portals
@@ -218,25 +312,58 @@ export default function DashboardPage() {
                     ) : error ? (
                         <div className="text-center py-10 text-red-600">{error}</div>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {activeTab === "telegram" && telegramJobs.length > 0 ? (
-                               telegramJobs.map((job) => (
-                                <div key={job._id || job.id}>
-                                  {renderJobCard(job, "telegram")}
-                                </div>
-                              ))
-                            ) : activeTab === "times" && timesJobs.length > 0 ? (
-                                timesJobs.map((job) => (
+                        <>
+                            {/* Jobs count and pagination info */}
+                            <div className="mb-4 text-sm text-gray-600">
+                                {activeTab === "telegram" ? (
+                                    <>
+                                        Showing {telegramJobs.length > 0 ? getCurrentPageJobs(telegramJobs, currentTelegramPage).length : 0} of {telegramJobs.length} Telegram jobs
+                                        {telegramJobs.length > jobsPerPage && (
+                                            <span className="ml-2">
+                                                (Page {currentTelegramPage} of {getTotalPages(telegramJobs)})
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        Showing {timesJobs.length > 0 ? getCurrentPageJobs(timesJobs, currentTimesPage).length : 0} of {timesJobs.length} Web Portal jobs
+                                        {timesJobs.length > jobsPerPage && (
+                                            <span className="ml-2">
+                                                (Page {currentTimesPage} of {getTotalPages(timesJobs)})
+                                            </span>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {activeTab === "telegram" && telegramJobs.length > 0 ? (
+                                   getCurrentPageJobs(telegramJobs, currentTelegramPage).map((job) => (
                                     <div key={job._id || job.id}>
-                                      {renderJobCard(job, "times")}
+                                      {renderJobCard(job, "telegram")}
                                     </div>
                                   ))
-                            ) : (
-                                <div className="col-span-full text-center py-10">
-                                    No matching jobs found
-                                </div>
-                            )}
-                        </div>
+                                ) : activeTab === "times" && timesJobs.length > 0 ? (
+                                    getCurrentPageJobs(timesJobs, currentTimesPage).map((job) => (
+                                        <div key={job._id || job.id}>
+                                          {renderJobCard(job, "times")}
+                                        </div>
+                                      ))
+                                ) : (
+                                    <div className="col-span-full text-center py-10">
+                                        No matching jobs found
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Pagination Controls */}
+                            {activeTab === "telegram" && telegramJobs.length > 0 && 
+                                renderPagination(telegramJobs, currentTelegramPage, "telegram")
+                            }
+                            {activeTab === "times" && timesJobs.length > 0 && 
+                                renderPagination(timesJobs, currentTimesPage, "times")
+                            }
+                        </>
                     )}
                 </main>
             </div>

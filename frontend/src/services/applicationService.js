@@ -4,7 +4,7 @@ import axios from "axios";
 import { getToken } from "./authService";
 
 // const API_URL = "http://localhost:5000/api/v1/applications";
-const API_URL = "https://talentalign-backend.onrender.com/api/v1/application";
+const API_URL = "https://talentalign-backend.onrender.com/api/v1/applications";
 
 export const trackJobApplication = async (jobData) => {
   try {
@@ -44,6 +44,20 @@ export const getUserApplications = async () => {
     return response.data;
   } catch (error) {
     console.error("Get applications error:", error.response?.data || error.message);
-    throw error;
+    
+    // Provide more specific error messages based on the error response
+    if (error.response?.status === 401) {
+      throw new Error("Authentication failed. Please log in again.");
+    } else if (error.response?.status === 403) {
+      throw new Error("Access denied. Please check your permissions.");
+    } else if (error.response?.status === 404) {
+      throw new Error("No applications found.");
+    } else if (error.response?.status >= 500) {
+      throw new Error("Server error. Please try again later.");
+    } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+      throw new Error("Network error. Please check your connection and try again.");
+    } else {
+      throw new Error(error.response?.data?.message || "Failed to load applications. Please try again.");
+    }
   }
 };

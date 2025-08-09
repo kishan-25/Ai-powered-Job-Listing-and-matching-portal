@@ -11,6 +11,7 @@ const jobRoutes = require('./routes/jobRoutes');
 const cvHandler = require('./cvHandler');
 const resumeRoutes = require('./routes/resumeRoute');
 const authRoutes = require('./routes/authRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const { exec } = require("child_process");
 const generateCoverLetterRoute = require("./routes/generateCoverLetter");
 
@@ -95,12 +96,14 @@ app.post('/process-cv', async(req, res) => {
 // ✅ Add these middlewares
 
 app.use(express.urlencoded({ extended: true }));
+
 //Routes
 app.use("/api/v1/auth", authRoutes);
 app.use('/api/v1/jobs', jobRoutes);
 app.use("/api/v1/cover-letter", generateCoverLetterRoute);
 app.use('/api/v1/resume', resumeRoutes);
 app.use('/api/v1/applications', applicationRoutes);
+app.use('/api/v1/contact', contactRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, ()=> console.log(`Server is runnig on PORT : ${PORT}`));
