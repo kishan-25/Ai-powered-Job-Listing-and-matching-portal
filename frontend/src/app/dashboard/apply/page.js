@@ -50,7 +50,7 @@ function ApplyPageContent() {
     };
 
     if (jobId && source) getJobById();
-  }, [jobId, source]);
+  }, [jobId, source, showError]);
 
   const handleGenerateCoverLetter = async () => {
     if (!job) return;

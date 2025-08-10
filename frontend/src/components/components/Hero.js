@@ -16,7 +16,7 @@ const Hero = ({ darkMode }) => {
     }, 2000); // Change word every 2 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [words.length]);
 
   useEffect(() => {
     if (!user) {

@@ -78,7 +78,7 @@ Transform your job search with AI
             transition={{ duration: 0.5, delay: 0.3 }}
             className= {`mt-6 max-w-3xl mx-auto text-xl md:text-2xl font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}
           >
-Discover why thousands of job seekers trust TalentAlign's AI-powered platform to accelerate their careers
+Discover why thousands of job seekers trust TalentAlign&apos;s AI-powered platform to accelerate their careers
           </motion.p>
         </div>
 

@@ -46,7 +46,7 @@ export default function ProfilePage() {
     };
 
     fetchUserApplications();
-  }, []);
+  }, [showError, showSuccess, showWarning]);
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);

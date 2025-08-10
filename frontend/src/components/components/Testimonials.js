@@ -63,7 +63,7 @@ const Testimonials = ({ darkMode }) => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className={ `mt-4 max-w-2xl mx-auto text-xl ${darkMode ? "text-gray-300" : "text-black"}`}
           >
-            Don't just take our word for it — hear from the companies that have used our platform
+            Don&apos;t just take our word for it — hear from the companies that have used our platform
           </motion.p>
         </div>
 
@@ -86,7 +86,7 @@ const Testimonials = ({ darkMode }) => {
                 ))}
               </div>
               <p className={`mb-4 text-lg italic ${darkMode ? "text-gray-300" : "text-gray-600"}`}>
-                "{testimonial.content}"
+                &ldquo;{testimonial.content}&rdquo;
               </p>
               <div className="flex items-center">
                 <div className={`h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-lime-300"}`}>
