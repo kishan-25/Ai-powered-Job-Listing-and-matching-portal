@@ -1,11 +1,46 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const axios = require('axios');
+const RegexResumeParser = require('./utils/regexResumeParser');
 
 async function cvHandler(fileUrl) {
     console.log("📥 Starting CV processing for URL:", fileUrl);
 
+    const regexParser = new RegexResumeParser();
+    
+    try {
+        // STEP 1: Try regex-based extraction first
+        console.log("🔍 Attempting regex-based extraction...");
+        const regexResult = await regexParser.extractFromPDF(fileUrl);
+        
+        if (regexResult.isComplete && regexResult.data) {
+            console.log("✅ Regex extraction successful! Completeness:", regexResult.completenessScore);
+            console.log("✅ Final Extracted CV JSON (Regex):\n", JSON.stringify(regexResult.data, null, 2));
+            return regexResult.data;
+        }
+        
+        console.log("⚠️ Regex extraction incomplete. Completeness:", regexResult.completenessScore);
+        console.log("🤖 Falling back to Gemini AI...");
+        
+        // STEP 2: Fallback to Gemini AI if regex extraction is incomplete
+        return await processWithGemini(fileUrl, regexResult.data);
+        
+    } catch (error) {
+        console.error("❌ Error in CV handler:", error);
+        throw new Error("Failed to process CV: " + error.message);
+    }
+}
+
+async function processWithGemini(fileUrl, regexData = null) {
+    console.log("🤖 Processing with Gemini AI...");
+    
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY || require("./env").GEMINI_API_KEY;
-    if (!GEMINI_API_KEY) throw new Error("❌ Gemini API key is not configured");
+    if (!GEMINI_API_KEY) {
+        console.log("❌ Gemini API key not configured, using regex data only");
+        if (regexData) {
+            return regexData;
+        }
+        throw new Error("❌ Gemini API key is not configured and regex extraction failed");
+    }
 
     try {
         const downloadResponse = await axios({
@@ -127,18 +162,80 @@ JSON structure:
             );
         }
 
-        // Attach extracted URLs for backup or debugging
         cvJson.extractedUrls = rawUrls;
 
         // ✅ Final debug output
         console.log("✅ Final Extracted CV JSON:\n", JSON.stringify(cvJson, null, 2));
 
+        // If we have regex data, merge it with Gemini results for better accuracy
+        if (regexData) {
+            cvJson = mergeExtractionResults(regexData, cvJson);
+            console.log("🔄 Merged regex and Gemini results");
+        }
+        
         return cvJson;
 
     } catch (error) {
-        console.error("❌ Error in CV handler:", error);
+        console.error("❌ Gemini processing failed:", error);
+        
+        // If Gemini fails but we have regex data, use that
+        if (regexData) {
+            console.log("⚠️ Using regex data as fallback due to Gemini failure");
+            return regexData;
+        }
+        
         throw new Error("Failed to process CV: " + error.message);
     }
+}
+
+/**
+ * Merge regex and Gemini extraction results, preferring more complete data
+ */
+function mergeExtractionResults(regexData, geminiData) {
+    const merged = { ...geminiData };
+    
+    // Prefer non-empty values from either source
+    const mergeField = (field) => {
+        const regexValue = getNestedValue(regexData, field);
+        const geminiValue = getNestedValue(geminiData, field);
+        
+        if (Array.isArray(regexValue) && Array.isArray(geminiValue)) {
+            // For arrays, combine and deduplicate
+            const combined = [...regexValue, ...geminiValue];
+            return [...new Set(combined)].filter(item => item && item.toString().trim());
+        } else {
+            // For strings/numbers, prefer non-empty values
+            return (regexValue && regexValue.toString().trim()) ? regexValue : geminiValue;
+        }
+    };
+    
+    // Merge key fields
+    setNestedValue(merged, 'firstname', mergeField('firstname'));
+    setNestedValue(merged, 'lastname', mergeField('lastname'));
+    setNestedValue(merged, 'contact.email', mergeField('contact.email'));
+    setNestedValue(merged, 'contact.phone', mergeField('contact.phone'));
+    setNestedValue(merged, 'contact.linkedin', mergeField('contact.linkedin'));
+    setNestedValue(merged, 'contact.github', mergeField('contact.github'));
+    setNestedValue(merged, 'contact.portfolio', mergeField('contact.portfolio'));
+    setNestedValue(merged, 'skills', mergeField('skills'));
+    setNestedValue(merged, 'title', mergeField('title'));
+    setNestedValue(merged, 'yearOfExperience', mergeField('yearOfExperience'));
+    
+    return merged;
+}
+
+function getNestedValue(obj, path) {
+    return path.split('.').reduce((current, key) => current && current[key], obj);
+}
+
+function setNestedValue(obj, path, value) {
+    const keys = path.split('.');
+    const lastKey = keys.pop();
+    const target = keys.reduce((current, key) => {
+        if (!current[key]) current[key] = {};
+        return current[key];
+    }, obj);
+    target[lastKey] = value;
 }
 
 module.exports = cvHandler;
