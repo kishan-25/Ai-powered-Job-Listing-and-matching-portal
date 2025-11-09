@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
 const generateCoverLetter = async (req, res) => {
    // Verify user is authenticated (middleware should have added req.user)
@@ -20,16 +20,13 @@ const generateCoverLetter = async (req, res) => {
   }
 
   try {
-    // Initialize the API client
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    
-     
+    // Validate API key first
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("API key for Gemini is not configured");
     }
 
-    // Get the model - use simple model name without any prefix
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    // Initialize the API client with new @google/genai package
+    const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
     const prompt = `Craft a concise, authentic-sounding cover letter for ${userName} applying for the ${jobTitle} position at ${companyName}. The tone should be professional but conversational — like a real person who knows their stuff and isn’t trying too hard to sound perfect.
 
@@ -64,10 +61,12 @@ const generateCoverLetter = async (req, res) => {
     - Repetitive adjectives like “passionate” or “highly motivated”
     - Anything that sounds like AI wrote it — keep it warm and human`;
     
-    // Generate content with a simpler structure
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    // Generate content with new API
+    const result = await genAI.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: prompt
+    });
+    const text = result.text;
 
     res.status(200).json({ success: true, coverLetter: text });
   } catch (error) {

@@ -1,4 +1,4 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenAI } = require('@google/genai');
 const axios = require('axios');
 const RegexResumeParser = require('./utils/regexResumeParser');
 
@@ -52,8 +52,7 @@ async function processWithGemini(fileUrl, regexData = null) {
         });
 
         const pdfFileData = downloadResponse.data;
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const genAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
         const prompt = `
 You're a document parser for resumes. Extract structured information from the attached PDF.
@@ -95,19 +94,22 @@ JSON structure:
 }
 `;
 
-        const fileData = {
-            inlineData: {
-                data: Buffer.from(pdfFileData).toString('base64'),
-                mimeType: 'application/pdf'
+        const contents = [
+            { text: prompt },
+            {
+                inlineData: {
+                    data: Buffer.from(pdfFileData).toString('base64'),
+                    mimeType: 'application/pdf'
+                }
             }
-        };
+        ];
 
-        const result = await model.generateContent({
-            contents: [{ role: 'user', parts: [{ text: prompt }, fileData] }]
+        const result = await genAI.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: contents
         });
 
-        const aiResponse = result.response;
-        const text = aiResponse.text();
+        const text = result.text;
         let jsonString = text.replace(/```json|```/g, "").trim();
 
         const rawUrls = [...new Set(text.match(/https?:\/\/[^\s")]+/g))] || [];

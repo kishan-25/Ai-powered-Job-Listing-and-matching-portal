@@ -22,22 +22,32 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserApplications = async () => {
       setLoading(true);
+      setError("");
       try {
         const data = await getUserApplications();
-        setApplications(data.applications || []);
-        if (data.applications && data.applications.length > 0) {
-          showSuccess(`Loaded ${data.applications.length} applications successfully!`);
+        console.log("Fetched applications data:", data); // Debug log
+
+        // Handle different response structures
+        const apps = data?.applications || data || [];
+        setApplications(Array.isArray(apps) ? apps : []);
+
+        if (Array.isArray(apps) && apps.length > 0) {
+          showSuccess(`Loaded ${apps.length} application${apps.length > 1 ? 's' : ''} successfully!`);
         }
       } catch (err) {
         console.error("Error fetching applications:", err);
         // Provide more specific error messages
         if (err.response?.status === 401) {
+          setError("Authentication failed. Please log in again.");
           showError("Authentication failed. Please log in again.");
         } else if (err.response?.status === 404) {
+          setError("");
           showWarning("No applications found. Start applying to jobs to see them here!");
         } else if (err.response?.status >= 500) {
+          setError("Server error. Please try again later.");
           showError("Server error. Please try again later.");
         } else {
+          setError("Failed to load your applications. Please try again.");
           showError("Failed to load your applications. Please try again.");
         }
       } finally {
@@ -46,7 +56,8 @@ export default function ProfilePage() {
     };
 
     fetchUserApplications();
-  }, [showError, showSuccess, showWarning]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
