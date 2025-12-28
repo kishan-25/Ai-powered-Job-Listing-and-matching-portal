@@ -1,8 +1,8 @@
 "use client"
 import axios from "axios";
+import { API_BASE_URL } from '../config/api';
 
-// const API_URL = "http://localhost:5000/api/v1/jobs"; // Backend URL
-const API_URL = "https://talentalign-backend.onrender.com/api/v1/jobs";
+const API_URL = `${API_BASE_URL}/api/v1/jobs`;
 
 export const fetchTelegramJobs = async () => {
     const response = await axios.get(`${API_URL}/telegram`);

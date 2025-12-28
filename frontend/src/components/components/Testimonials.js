@@ -78,7 +78,7 @@ const Testimonials = ({ darkMode }) => {
             <motion.div 
               key={index} 
               variants={itemVariants}
-              className={`rounded-lg p-8 shadow-lg ${darkMode ? "bg-gray-800" : "bg-lime-100"}`}
+              className={`rounded-lg p-8 shadow-lg ${darkMode ? "bg-gray-800" : "bg-primary/5 border border-primary/10"}`}
             >
               <div className="flex items-center mb-4">
                 {[...Array(testimonial.stars)].map((_, i) => (
@@ -89,7 +89,7 @@ const Testimonials = ({ darkMode }) => {
                 &ldquo;{testimonial.content}&rdquo;
               </p>
               <div className="flex items-center">
-                <div className={`h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-lime-300"}`}>
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${darkMode ? "bg-gray-700" : "bg-primary text-white"}`}>
                   <span className="text-lg font-bold">{testimonial.name.charAt(0)}</span>
                 </div>
                 <div className="ml-4">

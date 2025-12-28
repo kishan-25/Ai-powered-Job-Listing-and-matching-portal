@@ -1,35 +1,136 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --primary-gradient-start: #1e40af; /* Deep blue */
-  --primary-gradient-end: #581c87; /* Purple */
+  /* Base colors - Dark Mode with Professional Blue Theme (DEFAULT) */
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+
+  /* Brand colors - Professional Blue */
+  --primary: #0A66C2;
+  --primary-hover: #0EA5E9;
+  --primary-foreground: #FFFFFF;
+
+  /* Accent colors - Sky Blue */
+  --accent: #0EA5E9;
+  --accent-hover: #38BDF8;
+  --accent-foreground: #FFFFFF;
+
+  /* Secondary accent - Light Blue for highlights */
+  --secondary: #38BDF8;
+  --secondary-hover: #0EA5E9;
+  --secondary-foreground: #FFFFFF;
+
+  /* Semantic colors */
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #DC2626;
+  --info: #0EA5E9;
+
+  /* Neutral colors - Dark Mode */
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --border: #334155;
+  --input: #334155;
+
+  /* Dark shades for contrast */
+  --dark: #0A0F1E;
+  --dark-foreground: #FFFFFF;
+
+  /* Shadows - Professional (adjusted for dark mode) */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+
+  /* Gradients - Professional Blue */
+  --gradient-primary: linear-gradient(135deg, #0A66C2, #0EA5E9);
+  --gradient-accent: linear-gradient(135deg, #0EA5E9, #38BDF8);
+  --gradient-dark: linear-gradient(135deg, #1E40AF, #0A66C2);
+  --gradient-success: linear-gradient(135deg, #10B981, #059669);
+}
+
+/* Light Mode Override */
+.light {
+  /* Base colors - Light Mode */
+  --background: #F8FAFC;
+  --foreground: #0F172A;
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+
+  /* Neutral colors - Light Mode with subtle blue tint */
+  --muted: #EFF6FF;
+  --muted-foreground: #64748B;
+  --border: #DBEAFE;
+  --input: #E0F2FE;
+
+  /* Shadows - Light Mode */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(10 102 194 / 0.1), 0 2px 4px -2px rgb(10 102 194 / 0.05);
+  --shadow-lg: 0 10px 15px -3px rgb(10 102 194 / 0.1), 0 4px 6px -4px rgb(10 102 194 / 0.05);
+  --shadow-xl: 0 20px 25px -5px rgb(10 102 194 / 0.1), 0 8px 10px -6px rgb(10 102 194 / 0.05);
+}
+
+/* Hero Section - Theme Aware */
+.hero-gradient {
+  /* Dark Mode (default): Dark gradient background */
+  background: linear-gradient(135deg, #1E293B 0%, #0F172A 50%, #1E293B 100%) !important;
+}
+
+.light .hero-gradient {
+  /* Light Mode: Blue gradient background */
+  background: linear-gradient(135deg, #0A66C2 0%, #0EA5E9 50%, #38BDF8 100%) !important;
 }
 
 @theme inline {
+  /* Colors */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-dark: var(--dark);
+  --color-dark-foreground: var(--dark-foreground);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
+
+  /* Border radius */
+  --radius-sm: 0.375rem;
+  --radius: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
-/* Remove or comment out the media query to prevent dark mode */
-/* @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-} */
-
 body, html {
-  background: var(--background) !important; /* Force light background */
+  background: var(--background) !important;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   min-height: 100%;
 }
 
-/* Add this to ensure all page wrappers use the light background */
+/* Ensure all page wrappers use the dark background */
 #__next, .app-container, main {
   background: var(--background);
   min-height: 100vh;

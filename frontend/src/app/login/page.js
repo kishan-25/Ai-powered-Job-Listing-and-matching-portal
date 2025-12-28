@@ -22,8 +22,22 @@ export default function LoginPage() {
             const data = await loginUser({ email, password });
             if (data.success) {
                 dispatch(loginSuccess(data));
-                showSuccess("Login successful! Redirecting to dashboard...");
-                router.push("/dashboard");
+                showSuccess("Login successful! Redirecting...");
+
+                // Role-based redirect
+                const userRole = data.userRole || 'job_seeker';
+                switch (userRole) {
+                    case 'admin':
+                        router.push("/admin");
+                        break;
+                    case 'recruiter':
+                        router.push("/recruiter");
+                        break;
+                    case 'job_seeker':
+                    default:
+                        router.push("/dashboard");
+                        break;
+                }
             } else {
                 dispatch(loginFailure(data.message || "Login failed"));
                 showError(data.message || "Login failed. Please check your credentials.");
@@ -38,8 +52,8 @@ export default function LoginPage() {
         <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
             <div className="max-w-md w-full bg-white text-black rounded-xl shadow-lg p-8 border border-gray-200">
                 <div className="text-center mb-8">
-                    <div className="w-12 h-12 bg-lime-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <span className="text-black font-bold text-xl">T</span>
+                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                        <span className="text-white font-bold text-xl">T</span>
                     </div>
                     <h1 className="text-3xl font-bold text-black mb-2">Welcome Back</h1>
                     <p className="text-gray-600">Sign in to your TalentAlign account</p>
@@ -55,7 +69,7 @@ export default function LoginPage() {
                         placeholder="Enter your email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                         required
                     />
                 </div>
@@ -67,7 +81,7 @@ export default function LoginPage() {
                         placeholder="Enter your password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
                         required
                     />
                 </div>

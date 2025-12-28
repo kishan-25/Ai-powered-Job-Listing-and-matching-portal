@@ -12,6 +12,9 @@ const cvHandler = require('./cvHandler');
 const resumeRoutes = require('./routes/resumeRoute');
 const authRoutes = require('./routes/authRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const recruiterRoutes = require('./routes/recruiterRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const userRoutes = require('./routes/userRoutes');
 const { exec } = require("child_process");
 const generateCoverLetterRoute = require("./routes/generateCoverLetter");
 
@@ -104,6 +107,9 @@ app.use("/api/v1/cover-letter", generateCoverLetterRoute);
 app.use('/api/v1/resume', resumeRoutes);
 app.use('/api/v1/applications', applicationRoutes);
 app.use('/api/v1/contact', contactRoutes);
+app.use('/api/v1/recruiter', recruiterRoutes);
+app.use('/api/v1/admin', adminRoutes);
+app.use('/api/v1/users', userRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, ()=> console.log(`Server is runnig on PORT : ${PORT}`));

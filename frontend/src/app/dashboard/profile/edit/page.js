@@ -7,9 +7,8 @@ import AuthGuard from "@/utils/authGuard";
 import { getToken } from "@/services/authService";
 import axios from "axios";
 import { loginSuccess } from "@/redux/slices/authSlice";
-import Navbar from "@/components/components/Navbar";
-import Breadcrumb from "@/components/Breadcrumb";
-import DashboardNav from "@/components/DashboardNav";
+import { Sidebar } from "@/components/ui/Sidebar";
+import { API_BASE_URL } from "@/config/api";
 
 
 export default function EditProfilePage() {
@@ -17,7 +16,6 @@ export default function EditProfilePage() {
   const dispatch = useDispatch();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   
@@ -72,8 +70,8 @@ export default function EditProfilePage() {
       };
 
       const response = await axios.put(
-        "http://localhost:5000/api/v1/auth/profile", 
-        processedData, 
+        `${API_BASE_URL}/api/v1/auth/profile`,
+        processedData,
         config
       );
 
@@ -129,32 +127,16 @@ export default function EditProfilePage() {
     }
   };
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
   return (
     <AuthGuard>
-      <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-      <div className="min-h-screen bg-gray-50 p-6 text-black">
+      <Sidebar />
+      <div className="min-h-screen bg-background ml-[280px] p-8">
         <div className="max-w-4xl mx-auto">
-          {/* Breadcrumb Navigation */}
-          <Breadcrumb 
-            items={[
-              { label: "Dashboard", href: "/dashboard" },
-              { label: "Profile", href: "/dashboard/profile" },
-              { label: "Edit Profile", href: null }
-            ]} 
-          />
-          
-          {/* Dashboard Navigation */}
-          <DashboardNav />
-          
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold text-black">Edit Profile</h1>
-            <button 
+            <h1 className="text-3xl font-bold text-foreground">Edit Profile</h1>
+            <button
               onClick={() => router.push("/dashboard/profile")}
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors duration-200"
+              className="bg-muted text-foreground px-4 py-2 rounded-lg hover:bg-muted-foreground/20 transition-colors duration-200"
             >
               Back to Profile
             </button>
@@ -162,19 +144,19 @@ export default function EditProfilePage() {
 
           {/* Error and Success Messages */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-error/10 border border-error/20 text-error px-4 py-3 rounded-lg mb-6">
               {error}
             </div>
           )}
           {success && (
-            <div className="bg-lime-50 border border-lime-200 text-green-800 px-4 py-3 rounded-lg mb-6">
+            <div className="bg-success/10 border border-success/20 text-success px-4 py-3 rounded-lg mb-6">
               {success}
             </div>
           )}
-          <form onSubmit={handleSubmit} className="bg-white border rounded-xl p-6 shadow-lg">
+          <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 shadow-lg">
           <div className="grid md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="name">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="name">
                 Name
               </label>
               <input
@@ -183,12 +165,12 @@ export default function EditProfilePage() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
-            
+
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="role">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="role">
                 Role
               </label>
               <select
@@ -196,7 +178,7 @@ export default function EditProfilePage() {
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               >
                 <option value="">Select a role</option>
                 <option value="Software Engineer">Software Engineer</option>
@@ -211,7 +193,7 @@ export default function EditProfilePage() {
             </div>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="experience">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="experience">
                 Experience (Years)
               </label>
               <input
@@ -220,12 +202,12 @@ export default function EditProfilePage() {
                 name="experience"
                 value={formData.experience}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="education">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="education">
                 Education
               </label>
               <input
@@ -234,12 +216,12 @@ export default function EditProfilePage() {
                 name="education"
                 value={formData.education}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="location">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="location">
                 Location
               </label>
               <input
@@ -248,12 +230,12 @@ export default function EditProfilePage() {
                 name="location"
                 value={formData.location}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="skills">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="skills">
                 Skills (comma separated)
               </label>
               <input
@@ -262,13 +244,13 @@ export default function EditProfilePage() {
                 name="skills"
                 value={formData.skills}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
                 placeholder="React, Node.js, JavaScript"
               />
             </div>
 
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="github">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="github">
                 GitHub URL
               </label>
               <input
@@ -277,12 +259,12 @@ export default function EditProfilePage() {
                 name="github"
                 value={formData.github}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="linkedin">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="linkedin">
                 LinkedIn URL
               </label>
               <input
@@ -291,12 +273,12 @@ export default function EditProfilePage() {
                 name="linkedin"
                 value={formData.linkedin}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
             
             <div>
-              <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="portfolio">
+              <label className="block text-foreground text-sm font-medium mb-2" htmlFor="portfolio">
                 Portfolio URL
               </label>
               <input
@@ -305,13 +287,13 @@ export default function EditProfilePage() {
                 name="portfolio"
                 value={formData.portfolio}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+                className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
               />
             </div>
           </div>
           
           <div className="mt-6">
-            <label className="block text-gray-700 text-sm font-medium mb-2" htmlFor="aboutMe">
+            <label className="block text-foreground text-sm font-medium mb-2" htmlFor="aboutMe">
               About Me
             </label>
             <textarea
@@ -320,7 +302,7 @@ export default function EditProfilePage() {
               value={formData.aboutMe}
               onChange={handleChange}
               rows="4"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-lime-300 focus:border-lime-300 transition-colors duration-200"
+              className="w-full px-3 py-2 bg-input border border-border text-foreground rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-colors duration-200"
             ></textarea>
           </div>
           
@@ -328,7 +310,7 @@ export default function EditProfilePage() {
             <div className="flex gap-4">
               <button
                 type="submit"
-                className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-lime-300 focus:ring-offset-2 transition-colors duration-200 font-medium"
+                className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 transition-colors duration-200 font-medium"
                 disabled={loading}
               >
                 {loading ? "Updating..." : "Save Changes"}
@@ -336,7 +318,7 @@ export default function EditProfilePage() {
               <button
                 type="button"
                 onClick={() => router.push("/dashboard/profile")}
-                className="bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors duration-200 font-medium"
+                className="bg-muted text-foreground px-6 py-3 rounded-lg hover:bg-muted-foreground/20 transition-colors duration-200 font-medium"
               >
                 Cancel
               </button>

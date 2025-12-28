@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Facebook, Twitter, Instagram, Linkedin, Mail, PhoneCall, MapPin } from "lucide-react";
 
-const Footer = ({ darkMode }) => {
+const Footer = () => {
   const currentYear = new Date().getFullYear();
   
   const socialLinks = [
@@ -53,7 +53,7 @@ const Footer = ({ darkMode }) => {
   ];
   
   return (
-    <footer className={`${darkMode ? "bg-gray-900 text-gray-300" : "bg-black text-gray-300"}`}>
+    <footer className="bg-dark text-gray-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Logo and Social Links */}
@@ -64,9 +64,9 @@ const Footer = ({ darkMode }) => {
               viewport={{ once: true }}
               transition={{ duration: 0.5 }}
             >
-              <div className="flex items-center mb-4">  
-                <div className={ `w-10 h-10 rounded-full ${darkMode ? "bg-white" : "bg-black"  } flex items-center justify-center` } >
-                  <span className= {`${darkMode ? "text-black" : "text-white"} font-bold text-xl`} >T</span>
+              <div className="flex items-center mb-4">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                  <span className="text-white font-bold text-xl">T</span>
                 </div>
                 <span className="ml-2 text-xl font-bold text-white">TalentAlign</span>
               </div>

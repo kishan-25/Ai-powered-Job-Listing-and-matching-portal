@@ -1,20 +1,21 @@
 "use client"
 import axios from "axios";
+import { API_BASE_URL } from '../config/api';
 
-// const API_URL = "http://localhost:5000/api/v1/auth"; // Backend URL
-const API_URL = "https://talentalign-backend.onrender.com/api/v1/auth";
+const API_URL = `${API_BASE_URL}/api/v1/auth`;
 
 
 // Add these functions to handle token storage
 export const setToken = (token) => {
-  localStorage.setItem('userToken', token);
+  localStorage.setItem('token', token);
 };
 
 export const getToken = () => {
-  return localStorage.getItem('userToken');
+  return localStorage.getItem('token');
 };
 
 export const removeToken = () => {
+  localStorage.removeItem('token');
   localStorage.removeItem('userToken');
 };
 

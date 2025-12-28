@@ -4,63 +4,50 @@ import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
 import { logout } from "@/redux/slices/authSlice";
-import AuthGuard from "@/utils/authGuard";
+import RoleGuard from "@/components/RoleGuard";
 import { fetchTelegramJobs, fetchTimesJobs } from "@/services/jobService";
 import { calculateJobSkillMatch, getMatchColor, getMatchStrength } from "@/utils/jobMatching";
 import { getUserFromLocalStorage } from "@/services/authService";
-import Navbar from "@/components/components/Navbar";
-import Breadcrumb from "@/components/Breadcrumb";
-import DashboardNav from "@/components/DashboardNav";
+import { Sidebar } from "@/components/ui/Sidebar";
+import { StatsCard } from "@/components/ui/StatsCard";
+import { JobCard } from "@/components/ui/JobCard";
+import { motion } from "framer-motion";
+import {
+  Briefcase,
+  FileText,
+  Bookmark,
+  TrendingUp,
+  Search,
+  Filter,
+  MapPin,
+  AlertCircle,
+  Sparkles,
+  Layers
+} from "lucide-react";
 
 export default function DashboardPage() {
     const [telegramJobs, setTelegramJobs] = useState([]);
     const [timesJobs, setTimesJobs] = useState([]);
-    const [activeTab, setActiveTab] = useState("times");
+    const [allJobs, setAllJobs] = useState([]);
+    const [filteredJobs, setFilteredJobs] = useState([]);
+    const [activeTab, setActiveTab] = useState("all");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [darkMode, setDarkMode] = useState(false);
-    
+    const [searchQuery, setSearchQuery] = useState("");
+    const [locationFilter, setLocationFilter] = useState("");
+
     // Pagination state
-    const [currentTelegramPage, setCurrentTelegramPage] = useState(1);
-    const [currentTimesPage, setCurrentTimesPage] = useState(1);
-    const jobsPerPage = 6;
-    
+    const [currentPage, setCurrentPage] = useState(1);
+    const jobsPerPage = 12;
+
     const dispatch = useDispatch();
     const router = useRouter();
     const { user } = useSelector((state) => state.auth);
-    
+
     // Get user data from local storage if not in redux state
     const userData = user || getUserFromLocalStorage();
 
-    const handleLogout = () => {
-        dispatch(logout());
-        router.push("/");
-    };
-
-    const toggleDarkMode = () => {
-        setDarkMode(!darkMode);
-    };
-
-    // Pagination functions
-    const getCurrentPageJobs = (jobs, currentPage) => {
-        const indexOfLastJob = currentPage * jobsPerPage;
-        const indexOfFirstJob = indexOfLastJob - jobsPerPage;
-        return jobs.slice(indexOfFirstJob, indexOfLastJob);
-    };
-
-    const getTotalPages = (jobs) => {
-        return Math.ceil(jobs.length / jobsPerPage);
-    };
-
-    const handlePageChange = (pageNumber, jobType) => {
-        if (jobType === 'telegram') {
-            setCurrentTelegramPage(pageNumber);
-        } else {
-            setCurrentTimesPage(pageNumber);
-        }
-    };
-
-    // Using correct job skill matching logic
+    // Fetch jobs and calculate matches
     useEffect(() => {
         const getJobs = async () => {
             setLoading(true);
@@ -68,55 +55,61 @@ export default function DashboardPage() {
                 const telegramRes = await fetchTelegramJobs();
                 const timesRes = await fetchTimesJobs();
 
+                let allFetchedJobs = [];
+
                 if (telegramRes.success) {
-                    // Calculate skill match for telegram jobs
                     const jobsWithMatch = telegramRes.jobs.map(job => {
-                        // Get key skills from job text if possible
-                        const jobSkills = job.keySkills || '';
-                        
                         const matchResult = calculateJobSkillMatch(
-                            userData?.skills || [], 
+                            userData?.skills || [],
                             job.text || "",
                             job.title || "",
-                            jobSkills
+                            job.keySkills || ""
                         );
-                        
+
                         return {
                             ...job,
+                            source: 'telegram',
                             matchPercentage: matchResult.matchPercentage,
                             matchStrength: getMatchStrength(matchResult.matchPercentage),
-                            skillsNotMatched: matchResult.skillsNotMatched
+                            skillsNotMatched: matchResult.skillsNotMatched,
+                            job_type: job.job_type || 'Full-time',
+                            skills: job.keySkills?.split(',').map(s => s.trim()).filter(Boolean) || []
                         };
                     });
-                    
-                    // Filter out jobs with 0% match and sort remaining by match percentage
-                    const filteredJobs = jobsWithMatch.filter(job => job.matchPercentage > 0);
-                    setTelegramJobs(filteredJobs.sort((a, b) => b.matchPercentage - a.matchPercentage));
+
+                    setTelegramJobs(jobsWithMatch.sort((a, b) => b.matchPercentage - a.matchPercentage));
+                    allFetchedJobs = [...allFetchedJobs, ...jobsWithMatch];
                 }
-                
+
                 if (timesRes.success) {
-                    // Calculate skill match for times jobs
                     const jobsWithMatch = timesRes.jobs.map(job => {
                         const matchResult = calculateJobSkillMatch(
-                            userData?.skills || [], 
+                            userData?.skills || [],
                             job.description || "",
                             job.title || "",
                             job.keySkills || ""
                         );
-                        
+
                         return {
                             ...job,
+                            source: 'times',
                             matchPercentage: matchResult.matchPercentage,
                             matchStrength: getMatchStrength(matchResult.matchPercentage),
-                            skillsNotMatched: matchResult.skillsNotMatched
+                            skillsNotMatched: matchResult.skillsNotMatched,
+                            text: job.description,
+                            job_type: job.job_type || job.employmentType || 'Full-time',
+                            skills: job.keySkills?.split(',').map(s => s.trim()).filter(Boolean) || []
                         };
                     });
-                    
-                    // Filter out jobs with 0% match and sort remaining by match percentage
-                    const filteredJobs = jobsWithMatch.filter(job => job.matchPercentage > 0);
-                    setTimesJobs(filteredJobs.sort((a, b) => b.matchPercentage - a.matchPercentage));
+
+                    setTimesJobs(jobsWithMatch.sort((a, b) => b.matchPercentage - a.matchPercentage));
+                    allFetchedJobs = [...allFetchedJobs, ...jobsWithMatch];
                 }
-                
+
+                // Sort all jobs by match percentage
+                const sortedJobs = allFetchedJobs.sort((a, b) => b.matchPercentage - a.matchPercentage);
+                setAllJobs(sortedJobs);
+                setFilteredJobs(sortedJobs);
                 setLoading(false);
             } catch (error) {
                 console.error("Failed to fetch jobs", error);
@@ -130,243 +123,328 @@ export default function DashboardPage() {
         }
     }, [userData]);
 
-    const renderJobCard = (job, source) => {
-        return (
-            <div className="bg-white rounded-lg shadow-lg p-4 hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-lime-300">
-                <div className="flex justify-between">
-                    <h3 className="font-semibold text-lg text-black">{job.title || "No title"}</h3>
-                    <div className="flex flex-col items-end">
-                        <div className={`${getMatchColor(job.matchPercentage)} font-bold text-lg`}>
-                            {job.matchPercentage}% Match
-                        </div>
-                        <div className="text-sm text-gray-500">
-                            {job.matchStrength} match
-                        </div>
-                    </div>
-                </div>
-                
-                <p className="text-gray-700 mt-2">{job.company || "Unknown company"}</p>
-                
-                {job.location && <p className="text-gray-600 mt-1"> {job.location}</p>}
-                
-                {/* Display skills not matched - skills in job description but not in user skills */}
-                {job.skillsNotMatched && job.skillsNotMatched.length > 0 && (
-                    <div className="mt-2">
-                        <p className="text-sm font-medium text-orange-600">Skills not matched:</p>
-                        <p className="text-sm text-gray-600">{job.skillsNotMatched.join(", ")}</p>
-                    </div>
-                )}
-                
-                {source === "times" && job.keySkills && (
-                    <div className="mt-2">
-                        <p className="text-sm font-medium">Key Skills:</p>
-                        <p className="text-sm text-gray-600">{job.keySkills}</p>
-                    </div>
-                )}
-                
-                {source === "telegram" && job.role && (
-                    <div className="mt-2">
-                        <p className="text-sm font-medium">Role:</p>
-                        <p className="text-sm text-gray-600">{job.role}</p>
-                    </div>
-                )}
-                
-                <div className="mt-4 flex justify-end">
-                    <button 
-                        onClick={() => router.push(`/dashboard/apply?jobId=${job._id}&source=${source}`)}
-                        className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors duration-200"
-                    >
-                        Apply Now
-                    </button>
-                </div>
-            </div>
-        );
-    };
+    // Filter jobs based on search, location, and tab
+    useEffect(() => {
+        let jobsToFilter = allJobs;
 
-    const renderPagination = (totalJobs, currentPage, jobType) => {
-        const totalPages = getTotalPages(totalJobs);
-        
-        if (totalPages <= 1) return null;
-
-        const pageNumbers = [];
-        for (let i = 1; i <= totalPages; i++) {
-            pageNumbers.push(i);
+        // Filter by tab
+        if (activeTab === 'telegram') {
+            jobsToFilter = telegramJobs;
+        } else if (activeTab === 'times') {
+            jobsToFilter = timesJobs;
         }
 
-        return (
-            <div className="flex justify-center items-center space-x-2 mt-8">
-                <button
-                    onClick={() => handlePageChange(currentPage - 1, jobType)}
-                    disabled={currentPage === 1}
-                    className={`px-3 py-2 rounded-md ${
-                        currentPage === 1
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-white border border-gray-300 text-black hover:bg-lime-50 hover:border-lime-300'
-                    } transition-colors duration-200`}
-                >
-                    Previous
-                </button>
-                
-                {pageNumbers.map((number) => (
-                    <button
-                        key={number}
-                        onClick={() => handlePageChange(number, jobType)}
-                        className={`px-3 py-2 rounded-md ${
-                            currentPage === number
-                                ? 'bg-lime-300 text-black font-semibold'
-                                : 'bg-white border border-gray-300 text-black hover:bg-lime-50 hover:border-lime-300'
-                        } transition-colors duration-200`}
-                    >
-                        {number}
-                    </button>
-                ))}
-                
-                <button
-                    onClick={() => handlePageChange(currentPage + 1, jobType)}
-                    disabled={currentPage === totalPages}
-                    className={`px-3 py-2 rounded-md ${
-                        currentPage === totalPages
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-white border border-gray-300 text-black hover:bg-lime-50 hover:border-lime-300'
-                    } transition-colors duration-200`}
-                >
-                    Next
-                </button>
-            </div>
-        );
+        // Filter by search query
+        if (searchQuery) {
+            jobsToFilter = jobsToFilter.filter(job =>
+                (job.title?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (job.company?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                (job.text?.toLowerCase().includes(searchQuery.toLowerCase()))
+            );
+        }
+
+        // Filter by location
+        if (locationFilter) {
+            jobsToFilter = jobsToFilter.filter(job =>
+                job.location?.toLowerCase().includes(locationFilter.toLowerCase())
+            );
+        }
+
+        setFilteredJobs(jobsToFilter);
+        setCurrentPage(1); // Reset to first page when filters change
+    }, [searchQuery, locationFilter, activeTab, allJobs, telegramJobs, timesJobs]);
+
+    // Get stats
+    const stats = [
+        {
+            title: "Total Jobs",
+            value: allJobs.length.toString(),
+            icon: Briefcase,
+            trend: "up",
+            trendValue: "+15%"
+        },
+        {
+            title: "Perfect Matches",
+            value: allJobs.filter(j => j.matchPercentage >= 80).length.toString(),
+            icon: Sparkles,
+            trend: "up",
+            trendValue: `${Math.round((allJobs.filter(j => j.matchPercentage >= 80).length / allJobs.length) * 100) || 0}%`
+        },
+        {
+            title: "Good Matches",
+            value: allJobs.filter(j => j.matchPercentage >= 60 && j.matchPercentage < 80).length.toString(),
+            icon: TrendingUp,
+            trend: "neutral"
+        },
+        {
+            title: "Saved Jobs",
+            value: "0",
+            icon: Bookmark,
+            trend: "neutral"
+        }
+    ];
+
+    // Pagination
+    const indexOfLastJob = currentPage * jobsPerPage;
+    const indexOfFirstJob = indexOfLastJob - jobsPerPage;
+    const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
+    const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
+
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleSaveJob = (job) => {
+        console.log("Saved job:", job);
+        // TODO: Implement save functionality
+    };
+
+    const handleApplyJob = (job) => {
+        const source = job.source || 'telegram';
+        router.push(`/dashboard/apply?jobId=${job._id}&source=${source}`);
     };
 
     return (
-        <AuthGuard>
-            <Navbar darkMode={darkMode} toggleDarkMode={toggleDarkMode} />
-            <div className="min-h-screen bg-gray-50 text-black">
-                <header className="bg-lime-300 shadow-sm">
-                    <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-center">
-                            <h1 className="text-2xl font-bold text-black">TalentAlign Dashboard</h1>
-                        </div>
-                    </div>
-                </header>
+        <RoleGuard allowedRoles={['job_seeker']}>
+            <div className="min-h-screen bg-background">
+                {/* Sidebar */}
+                <Sidebar />
 
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {/* Breadcrumb Navigation */}
-                    <Breadcrumb 
-                        items={[
-                            { label: "Dashboard", href: null }
-                        ]} 
-                    />
-                    
-                    {/* Dashboard Navigation */}
-                    <DashboardNav />
-                    
-                    {/* Welcome section with user info */}
-                    <div className="bg-white rounded-lg shadow-lg p-6 mb-8 border border-gray-200">
-                        <h2 className="text-xl font-semibold text-black">Welcome, {userData?.name || "User"}!</h2>
-                        <p className="mt-2 text-gray-600">
-                            We have found jobs matching your skills: {userData?.skills?.join(", ") || "No skills added yet"}
+                {/* Main Content */}
+                <div className="ml-[280px] p-8 transition-all">
+                    {/* Header */}
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mb-8"
+                    >
+                        <h1 className="text-4xl font-bold text-foreground mb-2">
+                            Welcome Back, {userData?.name || "User"}! 👋
+                        </h1>
+                        <p className="text-muted-foreground text-lg">
+                            Find your perfect job match today
                         </p>
-                        {(!userData?.skills || userData.skills.length === 0) && (
-                            <div className="mt-4 p-4 bg-lime-50 border border-lime-200 text-gray-800 rounded-md">
-                                <p>Add skills to your profile to get better job matches!</p>
-                                <button 
-                                    onClick={() => router.push("/dashboard/profile")}
-                                    className="mt-2 text-black hover:text-gray-700 font-medium"
-                                >
-                                    Update Profile
-                                </button>
+                        {userData?.skills && userData.skills.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                <span className="text-sm text-muted-foreground">Your skills:</span>
+                                {userData.skills.slice(0, 5).map((skill, index) => (
+                                    <span
+                                        key={index}
+                                        className="px-3 py-1 text-xs font-medium rounded-full bg-primary/10 text-primary"
+                                    >
+                                        {skill}
+                                    </span>
+                                ))}
+                                {userData.skills.length > 5 && (
+                                    <span className="px-3 py-1 text-xs font-medium rounded-full bg-muted text-muted-foreground">
+                                        +{userData.skills.length - 5} more
+                                    </span>
+                                )}
                             </div>
                         )}
-                    </div>
-                    
-                    {/* Job tabs */}
-                    <div className="mb-6">
-                        <div className="border-b border-gray-200">
-                            <nav className="-mb-px flex" aria-label="Tabs">
-                                <button
-                                    onClick={() => setActiveTab("telegram")}
-                                    className={`${
-                                        activeTab === "telegram"
-                                            ? "border-black text-black bg-lime-100"
-                                            : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
-                                    } w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm sm:text-base`}
-                                >
-                                    Telegram Jobs
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab("times")}
-                                    className={`${
-                                        activeTab === "times"
-                                            ? "border-black text-black bg-lime-100"
-                                            : "border-transparent text-gray-500 hover:text-black hover:border-gray-300"
-                                    } w-1/2 py-4 px-1 text-center border-b-2 font-medium text-sm sm:text-base`}
-                                >
-                                    Web Portals
-                                </button>
-                            </nav>
-                        </div>
-                    </div>
-                    
-                    {/* Job listings */}
-                    {loading ? (
-                        <div className="text-center py-10">Loading jobs...</div>
-                    ) : error ? (
-                        <div className="text-center py-10 text-red-600">{error}</div>
-                    ) : (
-                        <>
-                            {/* Jobs count and pagination info */}
-                            <div className="mb-4 text-sm text-gray-600">
-                                {activeTab === "telegram" ? (
-                                    <>
-                                        Showing {telegramJobs.length > 0 ? getCurrentPageJobs(telegramJobs, currentTelegramPage).length : 0} of {telegramJobs.length} Telegram jobs
-                                        {telegramJobs.length > jobsPerPage && (
-                                            <span className="ml-2">
-                                                (Page {currentTelegramPage} of {getTotalPages(telegramJobs)})
-                                            </span>
-                                        )}
-                                    </>
-                                ) : (
-                                    <>
-                                        Showing {timesJobs.length > 0 ? getCurrentPageJobs(timesJobs, currentTimesPage).length : 0} of {timesJobs.length} Web Portal jobs
-                                        {timesJobs.length > jobsPerPage && (
-                                            <span className="ml-2">
-                                                (Page {currentTimesPage} of {getTotalPages(timesJobs)})
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </div>
+                    </motion.div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {activeTab === "telegram" && telegramJobs.length > 0 ? (
-                                   getCurrentPageJobs(telegramJobs, currentTelegramPage).map((job) => (
-                                    <div key={job._id || job.id}>
-                                      {renderJobCard(job, "telegram")}
-                                    </div>
-                                  ))
-                                ) : activeTab === "times" && timesJobs.length > 0 ? (
-                                    getCurrentPageJobs(timesJobs, currentTimesPage).map((job) => (
-                                        <div key={job._id || job.id}>
-                                          {renderJobCard(job, "times")}
-                                        </div>
-                                      ))
-                                ) : (
-                                    <div className="col-span-full text-center py-10">
-                                        No matching jobs found
-                                    </div>
-                                )}
+                    {/* No Skills Alert */}
+                    {(!userData?.skills || userData.skills.length === 0) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mb-8 bg-warning/10 border-l-4 border-warning rounded-lg p-6"
+                        >
+                            <div className="flex items-start gap-4">
+                                <AlertCircle className="h-6 w-6 text-warning flex-shrink-0 mt-1" />
+                                <div className="flex-1">
+                                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                                        No Skills Added Yet
+                                    </h3>
+                                    <p className="text-muted-foreground mb-4">
+                                        You're currently viewing all jobs with <strong>0% match</strong>. Add your skills to see personalized job matches and get better recommendations!
+                                    </p>
+                                    <button
+                                        onClick={() => router.push("/dashboard/profile/edit")}
+                                        className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors font-semibold"
+                                    >
+                                        Add Skills to Profile
+                                    </button>
+                                </div>
                             </div>
-
-                            {/* Pagination Controls */}
-                            {activeTab === "telegram" && telegramJobs.length > 0 && 
-                                renderPagination(telegramJobs, currentTelegramPage, "telegram")
-                            }
-                            {activeTab === "times" && timesJobs.length > 0 && 
-                                renderPagination(timesJobs, currentTimesPage, "times")
-                            }
-                        </>
+                        </motion.div>
                     )}
-                </main>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {stats.map((stat, index) => (
+                            <StatsCard
+                                key={index}
+                                {...stat}
+                                delay={index * 0.1}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Search and Filters */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 }}
+                        className="bg-card rounded-xl border border-border p-6 shadow-sm mb-8"
+                    >
+                        <div className="flex flex-col md:flex-row gap-4 mb-6">
+                            {/* Search Input */}
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    placeholder="Search jobs, companies, keywords..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                                />
+                            </div>
+
+                            {/* Location Filter */}
+                            <div className="w-full md:w-64 relative">
+                                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                                <input
+                                    type="text"
+                                    placeholder="Location"
+                                    value={locationFilter}
+                                    onChange={(e) => setLocationFilter(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Tab Filters */}
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => setActiveTab('all')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                                    activeTab === 'all'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                            >
+                                <Layers className="h-4 w-4" />
+                                All Jobs ({allJobs.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('telegram')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                                    activeTab === 'telegram'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                            >
+                                Telegram ({telegramJobs.length})
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('times')}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                                    activeTab === 'times'
+                                        ? 'bg-primary text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                }`}
+                            >
+                                Web Portals ({timesJobs.length})
+                            </button>
+                        </div>
+                    </motion.div>
+
+                    {/* Results Info */}
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-foreground">
+                            {activeTab === 'all' ? 'All Jobs' : activeTab === 'telegram' ? 'Telegram Jobs' : 'Web Portal Jobs'}
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                            Showing {currentJobs.length} of {filteredJobs.length} jobs
+                        </p>
+                    </div>
+
+                    {/* Jobs Grid */}
+                    {loading ? (
+                        <div className="flex items-center justify-center py-20">
+                            <div className="text-center">
+                                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                                <p className="text-muted-foreground">Loading jobs...</p>
+                            </div>
+                        </div>
+                    ) : error ? (
+                        <div className="text-center py-20">
+                            <AlertCircle className="h-12 w-12 text-error mx-auto mb-4" />
+                            <p className="text-error font-semibold">{error}</p>
+                        </div>
+                    ) : currentJobs.length > 0 ? (
+                        <>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                                {currentJobs.map((job, index) => (
+                                    <JobCard
+                                        key={job._id || job.id || index}
+                                        job={job}
+                                        onSave={handleSaveJob}
+                                        onApply={handleApplyJob}
+                                        delay={0.5 + (index * 0.05)}
+                                    />
+                                ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center gap-2">
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 1}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            currentPage === 1
+                                                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                                                : 'bg-card border border-border text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary'
+                                        }`}
+                                    >
+                                        Previous
+                                    </button>
+
+                                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                                        <button
+                                            key={pageNum}
+                                            onClick={() => handlePageChange(pageNum)}
+                                            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                                currentPage === pageNum
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-card border border-border text-foreground hover:bg-primary/10'
+                                            }`}
+                                        >
+                                            {pageNum}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages}
+                                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                                            currentPage === totalPages
+                                                ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                                                : 'bg-card border border-border text-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary'
+                                        }`}
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className="text-center py-20">
+                            <Briefcase className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+                            <h3 className="text-xl font-semibold text-foreground mb-2">No jobs found</h3>
+                            <p className="text-muted-foreground">
+                                {searchQuery || locationFilter
+                                    ? "Try adjusting your search filters"
+                                    : "Check back later for new opportunities"}
+                            </p>
+                        </div>
+                    )}
+                </div>
             </div>
-        </AuthGuard>
+        </RoleGuard>
     );
 }

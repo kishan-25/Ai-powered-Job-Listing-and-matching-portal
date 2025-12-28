@@ -1,8 +1,8 @@
 "use client";
 import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
 
-// const API_URL = "http://localhost:5000";
-const API_URL = "https://talentalign-backend.onrender.com";
+const API_URL = API_BASE_URL;
 
 export const uploadResume = async (file) => {
   try {

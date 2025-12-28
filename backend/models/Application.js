@@ -35,12 +35,42 @@ const applicationSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  status: {
+    type: String,
+    enum: ['pending', 'shortlisted', 'rejected', 'interview_scheduled'],
+    default: 'pending'
+  },
+  resumeUrl: {
+    type: String,
+    default: ""
+  },
+  coverLetter: {
+    type: String,
+    default: ""
+  },
+  notes: {
+    type: String,
+    default: ""
+  },
+  statusHistory: [{
+    status: String,
+    changedAt: {
+      type: Date,
+      default: Date.now
+    },
+    changedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  }]
 }, {
   timestamps: true
 });
 
-// Create a compound unique index on user and jobId
-// This prevents duplicate applications for the same job by the same user
+// Create indexes for faster queries
 applicationSchema.index({ user: 1, jobId: 1 }, { unique: true });
+applicationSchema.index({ user: 1, status: 1 });
+applicationSchema.index({ jobId: 1, status: 1 });
+applicationSchema.index({ source: 1 });
 
 module.exports = mongoose.model("Application", applicationSchema);

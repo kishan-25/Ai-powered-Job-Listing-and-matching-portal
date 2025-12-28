@@ -6,10 +6,10 @@ import { useRouter } from "next/navigation";
 import { getUserFromLocalStorage, removeUserFromLocalStorage } from "@/services/authService";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Sun, Moon, Menu, X, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, LogOut, ChevronDown, Sun, Moon } from "lucide-react";
 import { logout } from "@/redux/slices/authSlice";
 
-const Navbar = ({ darkMode, toggleDarkMode }) => {
+const Navbar = () => {
   const { user, isAuthenticated } = useSelector((state) => state.auth);
   const router = useRouter();
   const dispatch = useDispatch();
@@ -18,6 +18,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
   const [isClient, setIsClient] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isLightMode, setIsLightMode] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -27,7 +28,25 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
     } else {
       setUserData(user);
     }
+
+    // Check for saved theme preference
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+      setIsLightMode(true);
+      document.documentElement.classList.add('light');
+    }
   }, [user]);
+
+  const toggleTheme = () => {
+    setIsLightMode(!isLightMode);
+    if (!isLightMode) {
+      document.documentElement.classList.add('light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      document.documentElement.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -63,7 +82,7 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
   if (!isClient) return null; // Prevent SSR mismatch
 
   return (
-    <nav className={`sticky top-0 z-50 ${darkMode ? "bg-gray-800 text-white" : "bg-lime-300 text-black"} shadow-md`}>
+    <nav className="sticky top-0 z-50 bg-card text-foreground border-b border-border shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
@@ -75,10 +94,10 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               className="flex items-center space-x-2"
             >
               <Link href="/" className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${darkMode ? "bg-lime-500" : "bg-black"}`}>
-                <span className={`font-bold ${darkMode ? "text-black" : "text-white"}`}>T</span>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-primary to-accent">
+                <span className="font-bold text-white">T</span>
                 </div>
-                <span className="text-xl font-bold">TalentAlign</span>
+                <span className="text-xl font-bold text-foreground">TalentAlign</span>
               </Link>
             </motion.div>
           </div>
@@ -89,45 +108,37 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             <div className="relative dropdown-container">
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className={`flex items-center space-x-1 ${darkMode ? "hover:text-gray-300" : "hover:text-gray-600"} transition-colors`}
+                className="flex items-center space-x-1 text-foreground hover:text-muted-foreground transition-colors"
               >
                 <span>Platform</span>
                 <ChevronDown size={16} className={`transform transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {dropdownOpen && (
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className={`absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg ${
-                    darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-200"
-                  } z-50`}
+                  className="absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg bg-card border border-border z-50"
                 >
                   <div className="py-1">
                     <Link
                       href="/#how-it-works"
-                      className={`block px-4 py-2 text-sm ${
-                        darkMode ? "hover:bg-gray-700 text-white" : "hover:bg-gray-100 text-gray-800"
-                      } transition-colors`}
+                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       onClick={() => setDropdownOpen(false)}
                     >
                       How It Works
                     </Link>
                     <Link
                       href="/#why-choose-us"
-                      className={`block px-4 py-2 text-sm ${
-                        darkMode ? "hover:bg-gray-700 text-white" : "hover:bg-gray-100 text-gray-800"
-                      } transition-colors`}
+                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       onClick={() => setDropdownOpen(false)}
                     >
                       Features
                     </Link>
                     <Link
                       href="/#platform-stats"
-                      className={`block px-4 py-2 text-sm ${
-                        darkMode ? "hover:bg-gray-700 text-white" : "hover:bg-gray-100 text-gray-800"
-                      } transition-colors`}
+                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
                       onClick={() => setDropdownOpen(false)}
                     >
                       Platform Stats
@@ -136,32 +147,36 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
                 </motion.div>
               )}
             </div>
-            
+
             {/* Theme Toggle */}
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={toggleDarkMode}
-              className={`p-2 rounded-full ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-              aria-label="Toggle dark mode"
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-foreground hover:bg-muted"
+              aria-label="Toggle theme"
             >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
             </motion.button>
-            
+
             {/* Authentication Links */}
             {userData || isAuthenticated ? (
               <>
-                <span className="text-sm">Hello, {userData?.name?.split(" ")[0] || "User"}</span>
-                <Link href="/dashboard" className={`px-3 py-2 rounded-md ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors`}>
+                <span className="text-sm text-foreground">Hello, {userData?.name?.split(" ")[0] || "User"}</span>
+                <Link
+                  href={
+                    userData?.userRole === 'admin' ? '/admin' :
+                    userData?.userRole === 'recruiter' ? '/recruiter' :
+                    '/dashboard'
+                  }
+                  className="px-3 py-2 rounded-md text-foreground hover:bg-muted transition-colors"
+                >
                   Dashboard
-                </Link>
-                <Link href="/dashboard/profile" className={`px-3 py-2 rounded-md ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors`}>
-                  Profile
                 </Link>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
-                  className="flex items-center px-3 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white transition-colors"
+                  className="flex items-center px-3 py-2 rounded-md bg-error hover:bg-error/80 text-white transition-colors"
                 >
                   <LogOut size={16} className="mr-1" />
                   Logout
@@ -169,18 +184,14 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               </>
             ) : (
               <>
-                <Link href="/login" className={`px-3 py-2 rounded-md ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"} transition-colors`}>
+                <Link href="/login" className="px-3 py-2 rounded-md text-foreground hover:bg-muted transition-colors">
                   Login
                 </Link>
                 <motion.a
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   href="/register"
-                  className={`px-4 py-2 rounded-md ${
-                    darkMode 
-                      ? "bg-white hover:bg-gray-100 text-black" 
-                      : "bg-black hover:bg-gray-800 text-white"
-                  } transition-colors`}
+                  className="px-4 py-2 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground transition-colors"
                 >
                   Sign Up
                 </motion.a>
@@ -189,19 +200,18 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center">
+          <div className="md:hidden flex items-center gap-2">
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={toggleDarkMode}
-              className={`p-2 mr-2 rounded-full ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-              aria-label="Toggle dark mode"
+              onClick={toggleTheme}
+              className="p-2 rounded-full text-foreground hover:bg-muted"
+              aria-label="Toggle theme"
             >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
+              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
             </motion.button>
-            
             <button
               onClick={toggleMobileMenu}
-              className="p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
+              className="p-2 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
               aria-expanded="false"
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -216,26 +226,26 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`md:hidden ${darkMode ? "bg-gray-800" : "bg-lime-300"} shadow-lg`}
+          className="md:hidden bg-card border-b border-border shadow-lg"
         >
           <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link 
-              href="/#how-it-works" 
-              className={`block px-3 py-2 rounded-md text-base font-medium ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+            <Link
+              href="/#how-it-works"
+              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
               onClick={toggleMobileMenu}
             >
               How It Works
             </Link>
-            <Link 
-              href="/#why-choose-us" 
-              className={`block px-3 py-2 rounded-md text-base font-medium ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+            <Link
+              href="/#why-choose-us"
+              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
               onClick={toggleMobileMenu}
             >
               Features
             </Link>
-            <Link 
-              href="/#platform-stats" 
-              className={`block px-3 py-2 rounded-md text-base font-medium ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+            <Link
+              href="/#platform-stats"
+              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
               onClick={toggleMobileMenu}
             >
               Platform Stats
@@ -245,26 +255,23 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
             {/* Mobile Authentication Links */}
             {userData || isAuthenticated ? (
               <>
-                <div className="px-3 py-2 font-medium text-sm">
+                <div className="px-3 py-2 font-medium text-sm text-foreground">
                   Hello, {userData?.name?.split(" ")[0] || "User"}
                 </div>
                 <Link
-                  href="/dashboard"
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                  href={
+                    userData?.userRole === 'admin' ? '/admin' :
+                    userData?.userRole === 'recruiter' ? '/recruiter' :
+                    '/dashboard'
+                  }
+                  className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
                   onClick={toggleMobileMenu}
                 >
                   Dashboard
                 </Link>
-                <Link
-                  href="/dashboard/profile"
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
-                  onClick={toggleMobileMenu}
-                >
-                  Profile
-                </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium bg-red-600 hover:bg-red-700 text-white"
+                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium bg-error hover:bg-error/80 text-white"
                 >
                   <LogOut size={16} className="mr-1" />
                   Logout
@@ -272,21 +279,17 @@ const Navbar = ({ darkMode, toggleDarkMode }) => {
               </>
             ) : (
               <>
-                <Link 
-                  href="/login" 
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
+                <Link
+                  href="/login"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
                   onClick={toggleMobileMenu}
                 >
                   Login
                 </Link>
-                <Link 
+                <Link
                   href="/register"
                   onClick={toggleMobileMenu}
-                  className={`block px-3 py-2 rounded-md text-base font-medium ${
-                    darkMode 
-                      ? "bg-white hover:bg-gray-100 text-black" 
-                      : "bg-black hover:bg-gray-800 text-white"
-                  }`}
+                  className="block px-3 py-2 rounded-md text-base font-medium bg-primary hover:bg-primary-hover text-primary-foreground"
                 >
                   Sign Up
                 </Link>

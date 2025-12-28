@@ -2,9 +2,9 @@
 
 import axios from "axios";
 import { getToken } from "./authService";
+import { API_BASE_URL } from '../config/api';
 
-// const API_URL = "http://localhost:5000/api/v1/applications";
-const API_URL = "https://talentalign-backend.onrender.com/api/v1/applications";
+const API_URL = `${API_BASE_URL}/api/v1/applications`;
 
 export const trackJobApplication = async (jobData) => {
   try {

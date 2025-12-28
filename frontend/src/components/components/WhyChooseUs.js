@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Target, Users, TrendingUp, Zap } from "lucide-react";
 
-const WhyChooseUs = ({ darkMode }) => {
+const WhyChooseUs = () => {
   const features = [
     {
       name: "Smart Skill Matching",
@@ -47,9 +47,9 @@ const WhyChooseUs = ({ darkMode }) => {
   };
 
   return (
-    <section 
-      id="why-choose-us" 
-      className={`py-24 ${darkMode ? "bg-gray-900" : "bg-white"}`}
+    <section
+      id="why-choose-us"
+      className="py-24 bg-background"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="lg:text-center">
@@ -58,31 +58,31 @@ const WhyChooseUs = ({ darkMode }) => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className={`text-xl md:text-2xl font-bold ${darkMode ? "text-white" : "text-black"}`}
+            className="text-xl md:text-2xl font-bold text-foreground"
           >
             Why Choose Us
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className={`mt-3 text-4xl md:text-5xl font-extrabold tracking-tight ${darkMode ? "text-white" : "text-gray-800"}`}
+            className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-foreground"
           >
 Transform your job search with AI
           </motion.p>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className= {`mt-6 max-w-3xl mx-auto text-xl md:text-2xl font-medium ${darkMode ? "text-gray-300" : "text-gray-600"}`}
+            className="mt-6 max-w-3xl mx-auto text-xl md:text-2xl font-medium text-muted-foreground"
           >
 Discover why thousands of job seekers trust TalentAlign&apos;s AI-powered platform to accelerate their careers
           </motion.p>
         </div>
 
-        <motion.div 
+        <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -91,19 +91,19 @@ Discover why thousands of job seekers trust TalentAlign&apos;s AI-powered platfo
         >
           <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
             {features.map((feature, index) => (
-              <motion.div 
-                key={index} 
+              <motion.div
+                key={index}
                 variants={itemVariants}
-                className={`flex ${darkMode ? "bg-gray-800" : "bg-gray-50"} p-8 rounded-lg shadow-lg`}
+                className="flex bg-card p-8 rounded-lg shadow-lg border border-border"
               >
-                <div className={`flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-md ${darkMode ? "bg-gray-700 text-white" : "bg-gray-100 text-black"}`}>
+                <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-md bg-muted text-foreground">
                   {feature.icon}
                 </div>
                 <div className="ml-5">
-                  <h3 className={`text-xl md:text-2xl font-bold ${darkMode ? "text-white" : "text-gray-800"}`}>
+                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
                     {feature.name}
                   </h3>
-                  <p className= {`mt-3 text-lg leading-relaxed ${darkMode ? "text-gray-300" : "text-gray-600"}`} >
+                  <p className="mt-3 text-lg leading-relaxed text-muted-foreground">
                     {feature.description}
                   </p>
                 </div>

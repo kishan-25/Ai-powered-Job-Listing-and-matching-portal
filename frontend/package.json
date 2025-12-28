@@ -11,7 +11,9 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.6.1",
     "axios": "^1.8.4",
-    "framer-motion": "^12.7.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.26",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.501.0",
     "next": "15.2.4",
@@ -22,7 +24,8 @@
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.16.0",
     "react-redux": "^9.2.0",
-    "react-toastify": "^11.0.5"
+    "react-toastify": "^11.0.5",
+    "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

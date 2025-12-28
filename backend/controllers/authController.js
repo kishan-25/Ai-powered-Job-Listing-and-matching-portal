@@ -10,22 +10,31 @@ const generateToken = (id) => {
 
 // Register User
 const registerUser = async (req, res) => {
-    const { 
-        name, 
-        email, 
-        password, 
-        skills, 
-        experience, 
-        role,
-        linkedin, 
-        github, 
-        portfolio 
+    const {
+        name,
+        email,
+        password,
+        skills,
+        experience,
+        jobTitle,
+        userRole,
+        linkedin,
+        github,
+        portfolio
     } = req.body;
 
     if (!name || !email || !password) {
         return res.status(400).json({
             success: false,
             message: "Please provide required fields: name, email, and password"
+        });
+    }
+
+    // Validate userRole if provided
+    if (userRole && !['job_seeker', 'recruiter', 'admin'].includes(userRole)) {
+        return res.status(400).json({
+            success: false,
+            message: "Invalid user role. Must be 'job_seeker', 'recruiter', or 'admin'"
         });
     }
 
@@ -38,13 +47,14 @@ const registerUser = async (req, res) => {
             });
         }
 
-        const user = await User.create({ 
-            name, 
-            email, 
+        const user = await User.create({
+            name,
+            email,
             password,
             skills: skills || [],
             experience: experience || "",
-            role: role || "Software Engineer",
+            jobTitle: jobTitle || "Software Engineer",
+            userRole: userRole || "job_seeker",
             linkedin: linkedin || "",
             github: github || "",
             portfolio: portfolio || ""
@@ -58,7 +68,9 @@ const registerUser = async (req, res) => {
                 email: user.email,
                 skills: user.skills,
                 experience: user.experience,
-                role: user.role,
+                jobTitle: user.jobTitle,
+                userRole: user.userRole,
+                accountStatus: user.accountStatus,
                 linkedin: user.linkedin,
                 github: user.github,
                 portfolio: user.portfolio,
@@ -82,11 +94,20 @@ const registerUser = async (req, res) => {
 // Login User
 const loginUser = async (req, res) => {
     const { email, password } = req.body;
-    
+
     try {
         const user = await User.findOne({ email });
 
         if (user && (await user.matchPassword(password))) {
+            // Check if account is suspended
+            if (user.accountStatus === 'suspended') {
+                return res.status(403).json({
+                    success: false,
+                    message: "Your account has been suspended. Please contact support.",
+                    suspensionReason: user.suspensionReason || "No reason provided"
+                });
+            }
+
             res.json({
                 success: true,
                 _id: user._id,
@@ -94,7 +115,9 @@ const loginUser = async (req, res) => {
                 email: user.email,
                 skills: user.skills,
                 experience: user.experience,
-                role: user.role,
+                jobTitle: user.jobTitle,
+                userRole: user.userRole,
+                accountStatus: user.accountStatus,
                 linkedin: user.linkedin,
                 github: user.github,
                 portfolio: user.portfolio,
@@ -148,7 +171,7 @@ const updateUserProfile = async (req, res) => {
             user.name = req.body.name || user.name;
             user.skills = req.body.skills || user.skills;
             user.experience = req.body.experience || user.experience;
-            user.role = req.body.role || user.role;
+            user.jobTitle = req.body.jobTitle || user.jobTitle;
             user.education = req.body.education || user.education;
             user.location = req.body.location || user.location;
             user.aboutMe = req.body.aboutMe || user.aboutMe;
@@ -156,6 +179,9 @@ const updateUserProfile = async (req, res) => {
             user.linkedin = req.body.linkedin || user.linkedin;
             user.github = req.body.github || user.github;
             user.portfolio = req.body.portfolio || user.portfolio;
+
+            // Note: userRole cannot be changed by users themselves
+            // Only admins can change userRole
 
             const updatedUser = await user.save();
 
@@ -168,7 +194,8 @@ const updateUserProfile = async (req, res) => {
                     email: updatedUser.email,
                     skills: updatedUser.skills,
                     experience: updatedUser.experience,
-                    role: updatedUser.role,
+                    jobTitle: updatedUser.jobTitle,
+                    userRole: updatedUser.userRole,
                     education: updatedUser.education,
                     location: updatedUser.location,
                     aboutMe: updatedUser.aboutMe,

@@ -32,7 +32,7 @@ const Toast = ({ message, type = "info", duration = 5000, onClose }) => {
   const getToastStyles = () => {
     switch (type) {
       case "success":
-        return "bg-lime-50 border-lime-200 text-gray-800";
+        return "bg-success/10 border-success/20 text-success";
       case "error":
         return "bg-red-50 border-red-200 text-red-800";
       case "warning":

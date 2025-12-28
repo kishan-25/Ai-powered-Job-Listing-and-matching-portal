@@ -1,41 +1,37 @@
 // Improved AuthGuard.js
 "use client";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { getUserFromLocalStorage } from "@/services/authService";
-import { loginSuccess } from "@/redux/slices/authSlice";
+import { useEffect } from "react";
 
 export default function AuthGuard({ children }) {
-    const { user, isAuthenticated } = useSelector((state) => state.auth);
+    const { user, isAuthenticated, hydrated } = useSelector((state) => state.auth);
     const router = useRouter();
-    const dispatch = useDispatch();
-    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // If user is already in Redux store, no need to check localStorage
-        if (user) {
-            setIsLoading(false);
+        // Wait for hydration to complete
+        if (!hydrated) {
             return;
         }
 
-        // Check for user data in localStorage
-        const localStorageUser = getUserFromLocalStorage();
-        
-        if (localStorageUser) {
-            // If found in localStorage, update Redux store
-            dispatch(loginSuccess(localStorageUser));
-            setIsLoading(false);
-        } else {
-            // No user data found anywhere, redirect to login
+        // After hydration, check if user is authenticated
+        if (!user || !isAuthenticated) {
             router.push("/");
         }
-    }, [user, router, dispatch]);
+    }, [user, isAuthenticated, hydrated, router]);
 
-    // Show nothing while checking authentication
-    if (isLoading) {
-        return null; // Or a loading spinner
+    // Wait for hydration before showing anything
+    if (!hydrated) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+                    <p className="mt-4 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
     }
 
-    return user ? children : null;
+    // Show content only if user is authenticated
+    return (user && isAuthenticated) ? children : null;
 }

@@ -7,6 +7,7 @@ import { loginSuccess } from "@/redux/slices/authSlice";
 import AuthGuard from "@/utils/authGuard";
 import axios from "axios";
 import { getToken, getUserFromLocalStorage } from "@/services/authService";
+import { API_BASE_URL } from "@/config/api";
 
 export default function ProfilePage() {
   const { user } = useSelector((state) => state.auth);
@@ -108,7 +109,7 @@ export default function ProfilePage() {
 
     try {
       const response = await axios.put(
-        "http://localhost:5000/api/v1/auth/me",
+        `${API_BASE_URL}/api/v1/auth/me`,
         formData,
         {
           headers: {
