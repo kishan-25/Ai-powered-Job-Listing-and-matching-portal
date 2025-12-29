@@ -16,10 +16,10 @@
     "framer-motion": "^12.23.26",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.501.0",
-    "next": "15.2.4",
-    "react": "^18.2.0",
+    "next": "^15.3.2",
+    "react": "^19",
     "react-countup": "^6.5.3",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19",
     "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-intersection-observer": "^9.16.0",
@@ -31,7 +31,7 @@
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "15.2.4",
+    "eslint-config-next": "^15.3.2",
     "tailwindcss": "^4"
   }
 }
