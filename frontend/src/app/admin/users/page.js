@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import RoleGuard from '@/components/RoleGuard';
 import DashboardNav from '@/components/DashboardNav';
@@ -19,11 +19,19 @@ export default function UserManagementPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  // Force light mode for admin pages
   useEffect(() => {
-    fetchUsers();
-  }, [roleFilter, statusFilter, currentPage]);
+    document.documentElement.classList.add('light');
+    return () => {
+      // Restore theme when leaving admin pages
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.remove('light');
+      }
+    };
+  }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const filters = {
@@ -44,7 +52,11 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [roleFilter, statusFilter, currentPage, searchTerm]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleSearch = () => {
     setCurrentPage(1);

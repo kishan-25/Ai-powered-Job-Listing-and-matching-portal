@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import RoleGuard from '@/components/RoleGuard';
 import DashboardNav from '@/components/DashboardNav';
@@ -19,13 +19,7 @@ export default function JobDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
 
-  useEffect(() => {
-    if (jobId) {
-      fetchData();
-    }
-  }, [jobId, statusFilter]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch job details
@@ -45,7 +39,13 @@ export default function JobDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId, statusFilter]);
+
+  useEffect(() => {
+    if (jobId) {
+      fetchData();
+    }
+  }, [jobId, fetchData]);
 
   const handleStatusUpdate = async (applicationId, newStatus) => {
     try {

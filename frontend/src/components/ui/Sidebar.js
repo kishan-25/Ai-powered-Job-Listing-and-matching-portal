@@ -14,13 +14,8 @@ import {
   PlusCircle,
   Bookmark,
   Users,
-  Settings,
-  BarChart,
-  LogOut,
-  ChevronLeft,
-  ChevronRight
+  LogOut
 } from "lucide-react";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export function Sidebar({ className }) {
@@ -30,7 +25,6 @@ export function Sidebar({ className }) {
   const { user } = useSelector((state) => state.auth);
   const userData = user || getUserFromLocalStorage();
   const userRole = userData?.userRole || 'job_seeker';
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Role-specific navigation items
   const getNavItems = () => {
@@ -122,32 +116,25 @@ export function Sidebar({ className }) {
   return (
     <motion.aside
       initial={{ x: -300 }}
-      animate={{ x: 0, width: isCollapsed ? 80 : 280 }}
+      animate={{ x: 0 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col",
+        "fixed left-0 top-0 h-screen w-[280px] bg-card border-r border-border flex flex-col",
         className
       )}
     >
       {/* Header */}
-      <div className="p-6 flex items-center justify-between border-b border-border">
-        {!isCollapsed && (
-          <Link href="/" className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-lg">T</span>
-            </div>
-            <span className="text-xl font-bold text-foreground">TalentAlign</span>
-          </Link>
-        )}
-        {isCollapsed && (
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center mx-auto">
+      <div className="flex items-center p-6 border-b border-border">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-white font-bold text-lg">T</span>
           </div>
-        )}
+          <span className="text-xl font-bold text-foreground">TalentAlign</span>
+        </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 space-y-2 overflow-y-auto p-4">
         {navItems.map((item, index) => {
           const Icon = item.icon;
           return (
@@ -160,30 +147,21 @@ export function Sidebar({ className }) {
               <Link
                 href={item.href}
                 className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg transition-all group relative",
+                  "flex items-center gap-3 py-3 px-4 rounded-lg transition-all relative",
                   item.active
                     ? "bg-primary text-primary-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="font-medium">{item.label}</span>
-                )}
+                <span className="font-medium">{item.label}</span>
 
                 {/* Active indicator */}
-                {item.active && !isCollapsed && (
+                {item.active && (
                   <motion.div
                     layoutId="activeTab"
                     className="absolute right-2 h-2 w-2 rounded-full bg-white"
                   />
-                )}
-
-                {/* Tooltip for collapsed state */}
-                {isCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                    {item.label}
-                  </div>
                 )}
               </Link>
             </motion.div>
@@ -192,24 +170,18 @@ export function Sidebar({ className }) {
       </nav>
 
       {/* User Profile Section */}
-      <div className="p-4 border-t border-border space-y-2">
+      <div className="border-t border-border space-y-2 p-4">
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-muted-foreground hover:bg-error/10 hover:text-error transition-all group relative"
+          className="w-full flex items-center gap-3 py-3 px-4 rounded-lg text-muted-foreground hover:bg-error/10 hover:text-error transition-all"
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
-          {!isCollapsed && <span className="font-medium">Logout</span>}
-
-          {isCollapsed && (
-            <div className="absolute left-full ml-2 px-2 py-1 bg-foreground text-background text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-              Logout
-            </div>
-          )}
+          <span className="font-medium">Logout</span>
         </button>
 
         {/* User Info */}
-        {!isCollapsed && userData && (
+        {userData && (
           <div className="px-4 py-3 mt-2 bg-muted rounded-lg">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
@@ -228,21 +200,6 @@ export function Sidebar({ className }) {
             </div>
           </div>
         )}
-
-        {/* Collapse Toggle */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="w-full flex items-center justify-center px-4 py-2 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-all mt-2"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-5 w-5" />
-          ) : (
-            <>
-              <ChevronLeft className="h-5 w-5 mr-2" />
-              <span className="text-sm font-medium">Collapse</span>
-            </>
-          )}
-        </button>
       </div>
     </motion.aside>
   );

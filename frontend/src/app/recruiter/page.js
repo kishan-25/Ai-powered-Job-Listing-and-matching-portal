@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import RoleGuard from '@/components/RoleGuard';
 import DashboardNav from '@/components/DashboardNav';
@@ -17,11 +17,7 @@ export default function RecruiterDashboard() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    fetchData();
-  }, [statusFilter, currentPage]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       // Fetch stats
@@ -45,7 +41,11 @@ export default function RecruiterDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, currentPage]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleCloseJob = async (jobId) => {
     if (!confirm('Are you sure you want to close this job?')) return;

@@ -44,7 +44,6 @@ export function StatsCard({
             <div className={cn("flex items-center gap-1 mt-2 text-sm", getTrendColor())}>
               {getTrendIcon()}
               <span className="font-medium">{trendValue}</span>
-              <span className="text-muted-foreground">vs last month</span>
             </div>
           )}
         </div>

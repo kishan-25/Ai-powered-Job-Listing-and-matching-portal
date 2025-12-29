@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSelector } from 'react-redux';
 import RoleGuard from '@/components/RoleGuard';
@@ -20,11 +20,7 @@ export default function SavedJobsPage() {
   const [savedJobs, setSavedJobs] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchSavedJobs();
-  }, []);
-
-  const fetchSavedJobs = async () => {
+  const fetchSavedJobs = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.get(
@@ -59,7 +55,11 @@ export default function SavedJobsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userData]);
+
+  useEffect(() => {
+    fetchSavedJobs();
+  }, [fetchSavedJobs]);
 
   const handleUnsave = async (jobId) => {
     try {
@@ -97,7 +97,7 @@ export default function SavedJobsPage() {
             <div className="bg-white rounded-lg shadow-lg p-12 text-center mt-6">
               <Bookmark className="mx-auto mb-4 text-gray-400" size={64} />
               <h2 className="text-2xl font-bold text-gray-900 mb-2">No Saved Jobs Yet</h2>
-              <p className="text-gray-600 mb-6">Start browsing jobs and save the ones you're interested in!</p>
+              <p className="text-gray-600 mb-6">Start browsing jobs and save the ones you&apos;re interested in!</p>
               <button
                 onClick={() => router.push('/dashboard')}
                 className="px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-hover font-semibold"

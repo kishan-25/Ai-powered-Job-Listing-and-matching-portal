@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { MapPin, Briefcase, DollarSign, Clock, Bookmark, BookmarkCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import Image from "next/image";
 
 export function JobCard({
   job,
@@ -48,14 +49,13 @@ export function JobCard({
           {/* Company Logo */}
           {job.company_logo || job.companyLogo ? (
             <div className="h-12 w-12 rounded-lg overflow-hidden border border-border flex-shrink-0">
-              <img
+              <Image
                 src={job.company_logo || job.companyLogo}
                 alt={job.company || job.companyName}
+                width={48}
+                height={48}
                 className="h-full w-full object-cover"
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
+                unoptimized
               />
               <div
                 className="h-full w-full bg-primary/10 items-center justify-center text-primary font-semibold text-lg hidden"

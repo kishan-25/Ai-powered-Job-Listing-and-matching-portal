@@ -14,6 +14,18 @@ export default function AdminDashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Force light mode for admin pages
+  useEffect(() => {
+    document.documentElement.classList.add('light');
+    return () => {
+      // Restore theme when leaving admin pages
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.remove('light');
+      }
+    };
+  }, []);
+
   useEffect(() => {
     fetchAnalytics();
   }, []);

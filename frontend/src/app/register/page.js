@@ -528,7 +528,7 @@ export default function RegisterPage() {
                         Upload Your Resume (Optional)
                       </h3>
                       <p className="text-sm text-gray-600 mb-4">
-                        We'll automatically extract your skills, experience, and location
+                        We&apos;ll automatically extract your skills, experience, and location
                       </p>
                       <label className="cursor-pointer inline-flex items-center px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold">
                         <Upload size={18} className="mr-2" />

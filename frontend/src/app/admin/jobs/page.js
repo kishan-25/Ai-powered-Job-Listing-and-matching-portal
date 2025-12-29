@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import RoleGuard from '@/components/RoleGuard';
 import DashboardNav from '@/components/DashboardNav';
@@ -22,11 +22,19 @@ export default function AdminJobsPage() {
   });
   const [totalJobs, setTotalJobs] = useState(0);
 
+  // Force light mode for admin pages
   useEffect(() => {
-    fetchJobs();
-  }, [filters]);
+    document.documentElement.classList.add('light');
+    return () => {
+      // Restore theme when leaving admin pages
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.documentElement.classList.remove('light');
+      }
+    };
+  }, []);
 
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     setLoading(true);
     try {
       const queryFilters = {
@@ -47,7 +55,11 @@ export default function AdminJobsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 1 }));

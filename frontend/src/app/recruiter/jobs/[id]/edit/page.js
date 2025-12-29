@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import RoleGuard from '@/components/RoleGuard';
 import DashboardNav from '@/components/DashboardNav';
@@ -30,13 +30,7 @@ export default function EditJobPage() {
     expiresAt: ''
   });
 
-  useEffect(() => {
-    if (jobId) {
-      fetchJob();
-    }
-  }, [jobId]);
-
-  const fetchJob = async () => {
+  const fetchJob = useCallback(async () => {
     try {
       const response = await getJobById(jobId);
       if (response.success) {
@@ -60,7 +54,13 @@ export default function EditJobPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId]);
+
+  useEffect(() => {
+    if (jobId) {
+      fetchJob();
+    }
+  }, [jobId, fetchJob]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

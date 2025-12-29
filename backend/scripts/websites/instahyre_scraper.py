@@ -14,6 +14,10 @@ from pymongo import MongoClient
 from datetime import datetime, timezone
 import urllib.parse
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '..', '.env'))
 
 # Debug mode - set to True to save HTML and see browser
 DEBUG_MODE = True
@@ -47,7 +51,12 @@ driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), opti
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 # Connect to MongoDB
-client = MongoClient("mongodb+srv://bkbajpay0609:uv52KtpB09m1maFN@cluster0.xflo7xo.mongodb.net/")
+MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
+if not os.getenv('MONGO_URI'):
+    print("WARNING: MONGO_URI environment variable not set. Using default local connection.")
+    print("To use your MongoDB Atlas cluster, set MONGO_URI in your .env file\n")
+
+client = MongoClient(MONGO_URI)
 db = client["test"]
 collection = db["instahyre"]  # New collection for Instahyre jobs
 

@@ -259,7 +259,7 @@ export default function DashboardPage() {
                                         No Skills Added Yet
                                     </h3>
                                     <p className="text-muted-foreground mb-4">
-                                        You're currently viewing all jobs with <strong>0% match</strong>. Add your skills to see personalized job matches and get better recommendations!
+                                        You&apos;re currently viewing all jobs with <strong>0% match</strong>. Add your skills to see personalized job matches and get better recommendations!
                                     </p>
                                     <button
                                         onClick={() => router.push("/dashboard/profile/edit")}

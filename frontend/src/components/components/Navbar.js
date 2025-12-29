@@ -29,11 +29,18 @@ const Navbar = () => {
       setUserData(user);
     }
 
-    // Check for saved theme preference
+    // Check for saved theme preference - default to dark mode
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light') {
       setIsLightMode(true);
       document.documentElement.classList.add('light');
+    } else {
+      // Explicitly set dark mode as default
+      setIsLightMode(false);
+      document.documentElement.classList.remove('light');
+      if (!savedTheme) {
+        localStorage.setItem('theme', 'dark');
+      }
     }
   }, [user]);
 

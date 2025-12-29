@@ -79,22 +79,20 @@ Transform your job search with AI-powered matching and personalized application 
           className="mt-20 grid grid-cols-1 gap-y-12 gap-x-10 md:grid-cols-3"
         >
           {steps.map((step, index) => (
-            <motion.div 
-              key={index} 
+            <motion.div
+              key={index}
               variants={itemVariants}
               className="relative"
             >
-              {/* Connecting line between steps */}
-              {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-14 right-0 w-full h-1 bg-border transform translate-x-1/2">
-                  <div className="absolute top-0 left-0 h-full w-1/2 bg-primary"></div>
-                </div>
-              )}
-
               <div className="flow-root rounded-lg px-6 pb-8">
                 <div className="-mt-6">
-                  <div>
-                    <span className={`inline-flex items-center justify-center rounded-md ${step.color} p-4 shadow-lg`}>
+                  {/* Step Number Badge */}
+                  <div className="absolute top-0 right-6 bg-primary text-white text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
+                    {index + 1}
+                  </div>
+
+                  <div className="relative">
+                    <span className={`inline-flex items-center justify-center rounded-md ${step.color} p-4 shadow-lg border-2 border-primary/20`}>
                       {step.icon}
                     </span>
                   </div>
