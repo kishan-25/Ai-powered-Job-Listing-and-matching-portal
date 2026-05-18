@@ -1,3 +1,5 @@
+## Live link: https://talentalign.vercel.app/
+
 # TalentAlign - AI-Powered Job Listing and Matching Portal
 
 A comprehensive platform with **role-based experiences** for Job Seekers, Recruiters, and Admins. Each user type gets a tailored interface with unique features and visual themes.
