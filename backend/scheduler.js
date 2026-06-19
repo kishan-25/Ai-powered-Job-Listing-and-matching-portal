@@ -29,15 +29,28 @@ const RETRY_DELAY = 60_000;   // 1 min between retries
 // Catch-up window: if last run was more than 8 days ago, run immediately on startup
 const CATCHUP_THRESHOLD_MS = 8 * 24 * 60 * 60 * 1000;
 
+// ── Environment detection ─────────────────────────────────────────────────────
+// Render sets RENDER=true automatically. Website scrapers need Chrome/Selenium
+// which is NOT available on Render. Telegram scrapers are pure Python — fine.
+const IS_RENDER = !!process.env.RENDER;
+
 // ── Scraper definitions ───────────────────────────────────────────────────────
-const SCRAPERS = [
-  { id: "timesjobs",         name: "TimesJobs",              timeoutMs: 20 * 60_000,  cmd: `python "${path.join(WEBSITES_DIR, "timesOfJob_scraper.py")}"` },
-  { id: "hirejobs",          name: "HireJobs",               timeoutMs: 25 * 60_000,  cmd: `python "${path.join(WEBSITES_DIR, "hirejobs_scraper.py")}"` },
-  { id: "instahyre",         name: "Instahyre",              timeoutMs: 20 * 60_000,  cmd: `python "${path.join(WEBSITES_DIR, "instahyre_scraper.py")}"` },
-  { id: "telegram_techuprise",name: "Telegram — TechUprise", timeoutMs: 10 * 60_000,  cmd: `python "${path.join(TELEGRAM_DIR, "techuprise.py")}"` },
-  { id: "telegram_krishan",  name: "Telegram — Krishan Kumar",timeoutMs: 10 * 60_000, cmd: `python "${path.join(TELEGRAM_DIR, "krishan_kumar.py")}"` },
-  { id: "telegram_kushal",   name: "Telegram — Kushal Vijay",timeoutMs: 10 * 60_000, cmd: `python "${path.join(TELEGRAM_DIR, "kushal_vijay.py")}"` },
+// requiresBrowser: true  → needs Chrome/Selenium → skipped on Render
+// requiresBrowser: false → pure Python           → always runs
+const ALL_SCRAPERS = [
+  { id: "timesjobs",          name: "TimesJobs",               timeoutMs: 20 * 60_000, requiresBrowser: true,  cmd: `python "${path.join(WEBSITES_DIR, "timesOfJob_scraper.py")}"` },
+  { id: "hirejobs",           name: "HireJobs",                timeoutMs: 25 * 60_000, requiresBrowser: true,  cmd: `python "${path.join(WEBSITES_DIR, "hirejobs_scraper.py")}"` },
+  { id: "instahyre",          name: "Instahyre",               timeoutMs: 20 * 60_000, requiresBrowser: true,  cmd: `python "${path.join(WEBSITES_DIR, "instahyre_scraper.py")}"` },
+  { id: "telegram_techuprise", name: "Telegram — TechUprise",  timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python "${path.join(TELEGRAM_DIR, "techuprise.py")}"` },
+  { id: "telegram_krishan",   name: "Telegram — Krishan Kumar",timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python "${path.join(TELEGRAM_DIR, "krishan_kumar.py")}"` },
+  { id: "telegram_kushal",    name: "Telegram — Kushal Vijay", timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python "${path.join(TELEGRAM_DIR, "kushal_vijay.py")}"` },
 ];
+
+// On Render: only Telegram scrapers (no Chrome available)
+// Locally:   all scrapers
+const SCRAPERS = IS_RENDER
+  ? ALL_SCRAPERS.filter((s) => !s.requiresBrowser)
+  : ALL_SCRAPERS;
 
 // ── Mongoose model for run history ────────────────────────────────────────────
 const RunSchema = new mongoose.Schema({
@@ -122,11 +135,18 @@ async function runScraperWithRetries(scraper) {
 async function runAllScrapers(triggeredBy = "cron") {
   const runStart  = new Date();
   const wallStart = Date.now();
+  const skippedBrowserScrapers = IS_RENDER
+    ? ALL_SCRAPERS.filter((s) => s.requiresBrowser).map((s) => s.name)
+    : [];
 
   console.log(`\n${"═".repeat(65)}`);
   console.log(`🕷  Scraper run started — ${runStart.toISOString()}`);
   console.log(`   Triggered by : ${triggeredBy}`);
-  console.log(`   Scrapers     : ${SCRAPERS.length}  |  Max retries : ${MAX_RETRIES}`);
+  console.log(`   Environment  : ${IS_RENDER ? "Render" : "Local"}`);
+  console.log(`   Scrapers     : ${SCRAPERS.length} active  |  Max retries : ${MAX_RETRIES}`);
+  if (skippedBrowserScrapers.length) {
+    console.log(`   Skipped      : ${skippedBrowserScrapers.join(", ")} (no Chrome on Render)`);
+  }
   console.log(`${"─".repeat(65)}`);
 
   const results = [];
@@ -214,12 +234,19 @@ async function getSchedulerStatus() {
   next.setUTCDate(now.getUTCDate() + daysUntilSunday);
   next.setUTCHours(20, 30, 0, 0);
 
+  const skippedScrapers = IS_RENDER
+    ? ALL_SCRAPERS.filter((s) => s.requiresBrowser).map((s) => s.name)
+    : [];
+
   return {
     schedulerAlive: scheduledTask !== null,
+    isRender: IS_RENDER,
     cronExpression: CRON_EXPR,
     nextRunUTC: next.toISOString(),
     nextRunIST: next.toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
     scraperCount: SCRAPERS.length,
+    totalScrapers: ALL_SCRAPERS.length,
+    skippedScrapers,
     maxRetries: MAX_RETRIES,
     lastRuns: lastRuns.map((r) => ({
       startedAt: r.startedAt,
@@ -273,10 +300,16 @@ function startScheduler() {
   nextRun.setUTCDate(now.getUTCDate() + daysUntilSunday);
   nextRun.setUTCHours(20, 30, 0, 0);
 
+  const skipped = ALL_SCRAPERS.filter((s) => s.requiresBrowser);
   console.log("📅  Scraper scheduler started.");
+  console.log(`    Environment: ${IS_RENDER ? "Render (browser scrapers SKIPPED)" : "Local (all scrapers)"}`);
   console.log(`    Schedule   : Every Sunday at 2:00 AM IST (20:30 UTC)`);
   console.log(`    Next run   : ${nextRun.toUTCString()}`);
-  console.log(`    Scrapers   : ${SCRAPERS.length}  (${MAX_RETRIES} retries each)`);
+  console.log(`    Active     : ${SCRAPERS.length} scrapers  (${MAX_RETRIES} retries each)`);
+  if (IS_RENDER && skipped.length) {
+    console.log(`    Skipped    : ${skipped.map((s) => s.name).join(", ")} — Chrome not available on Render`);
+    console.log(`    Tip        : Run website scrapers locally with: node scheduler.js --run-now`);
+  }
   console.log(`    Catch-up   : runs on startup if last run > 8 days ago`);
 }
 

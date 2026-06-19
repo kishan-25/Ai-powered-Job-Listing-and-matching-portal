@@ -22,6 +22,11 @@ const { startScheduler, runAllScrapers, getSchedulerStatus } = require("./schedu
 
 const app = express();
 
+// Trust the first proxy (Render, Vercel, and other cloud platforms sit behind
+// a reverse proxy that sets X-Forwarded-For). Without this, express-rate-limit
+// throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR on every request.
+app.set("trust proxy", 1);
+
 // Rate limiting
 const globalLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes

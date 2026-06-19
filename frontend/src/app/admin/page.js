@@ -73,7 +73,7 @@ export default function AdminDashboard() {
       await axios.post(`${API_BASE_URL}/api/v1/admin/run-scrapers`, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      toast.success("Scrapers started in background! Check back in ~30 minutes.", TOAST);
+      toast.success("Scrapers running in background. Telegram jobs finish in ~5 min — refresh status to see results.", { ...TOAST, duration: 6000 });
       setTimeout(loadSchedulerStatus, 5000);
     } catch (e) {
       toast.error(e.response?.data?.message || "Failed to trigger scrapers", TOAST);
@@ -186,11 +186,22 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       {schedStatus?.nextRunIST && (
-                        <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--foreground-muted)" }}>
-                          <Clock className="h-3 w-3" />
-                          Next run: <span className="text-foreground font-medium">{schedStatus.nextRunIST}</span>
-                          &nbsp;·&nbsp;{schedStatus.scraperCount} scrapers · {schedStatus.maxRetries} retries each
-                        </p>
+                        <div className="space-y-1">
+                          <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--foreground-muted)" }}>
+                            <Clock className="h-3 w-3" />
+                            Next run: <span className="text-foreground font-medium">{schedStatus.nextRunIST}</span>
+                            &nbsp;·&nbsp;{schedStatus.scraperCount}/{schedStatus.totalScrapers} scrapers active · {schedStatus.maxRetries} retries each
+                          </p>
+                          {schedStatus.skippedScrapers?.length > 0 && (
+                            <p className="text-xs flex items-start gap-1.5" style={{ color: "#FBB040" }}>
+                              <AlertCircle className="h-3 w-3 mt-0.5 shrink-0" />
+                              <span>
+                                <strong>On Render:</strong> {schedStatus.skippedScrapers.join(", ")} skipped — Chrome not installed.
+                                Run website scrapers locally: <code className="text-xs px-1 rounded" style={{ background: "rgba(255,255,255,0.08)" }}>node scheduler.js --run-now</code>
+                              </span>
+                            </p>
+                          )}
+                        </div>
                       )}
                     </div>
 
