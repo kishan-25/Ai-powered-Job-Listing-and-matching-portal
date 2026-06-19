@@ -1,356 +1,355 @@
-'use client';
+"use client";
+import { useEffect, useState, useCallback, useRef } from "react";
+import RoleGuard from "@/components/RoleGuard";
+import { Sidebar } from "@/components/ui/Sidebar";
+import { getAllUsers, suspendUser, activateUser, deleteUser, updateUserRole } from "@/services/adminService";
+import toast, { Toaster } from "react-hot-toast";
+import {
+  Search, Users, Shield, Briefcase, UserCheck, UserX,
+  MoreVertical, RefreshCw, ChevronDown, Check,
+} from "lucide-react";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import RoleGuard from '@/components/RoleGuard';
-import DashboardNav from '@/components/DashboardNav';
-import Breadcrumb from '@/components/Breadcrumb';
-import { getAllUsers, suspendUser, activateUser, deleteUser, updateUserRole } from '@/services/adminService';
-import toast from 'react-hot-toast';
-import { Users, Search, Filter, Eye, Ban, CheckCircle, Trash2, UserCog } from 'lucide-react';
+const TOAST = { style: { background: "#252219", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" } };
 
-export default function UserManagementPage() {
-  const router = useRouter();
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [roleFilter, setRoleFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+/* ── Role & status badge styles ─────────────────────────────────────────── */
+const ROLE_STYLE = {
+  job_seeker: { bg: "rgba(13,81,255,0.1)",  color: "#6B9FFF", label: "Job Seeker",  icon: Briefcase },
+  recruiter:  { bg: "rgba(245,158,11,0.1)", color: "#FBB040", label: "Recruiter",   icon: Users },
+  admin:      { bg: "rgba(139,92,246,0.1)", color: "#A78BFA", label: "Admin",       icon: Shield },
+};
+const STATUS_STYLE = {
+  active:    { bg: "rgba(16,185,129,0.1)", color: "#34D399", label: "Active" },
+  suspended: { bg: "rgba(239,68,68,0.1)",  color: "#F87171", label: "Suspended" },
+};
 
-  // Force light mode for admin pages
+/* ── Action dropdown for each row ───────────────────────────────────────── */
+function ActionMenu({ user, onRefresh }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
   useEffect(() => {
-    document.documentElement.classList.add('light');
-    return () => {
-      // Restore theme when leaving admin pages
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'dark') {
-        document.documentElement.classList.remove('light');
-      }
-    };
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
   }, []);
 
-  const fetchUsers = useCallback(async () => {
+  const act = async (fn, label) => {
+    setOpen(false);
+    try {
+      const res = await fn();
+      if (res.success) { toast.success(label, TOAST); onRefresh(); }
+    } catch (e) { toast.error(e.message || "Failed", TOAST); }
+  };
+
+  const handleSuspend = () => {
+    const reason = window.prompt(`Suspension reason for ${user.name}:`);
+    if (!reason) return;
+    act(() => suspendUser(user._id, reason), "User suspended");
+  };
+
+  const handleRole = () => {
+    const roles = ["job_seeker", "recruiter", "admin"].filter((r) => r !== user.userRole);
+    const choice = window.prompt(`Change role (${roles.join(" / ")}):`);
+    if (!choice || !["job_seeker", "recruiter", "admin"].includes(choice)) {
+      toast.error("Invalid role", TOAST);
+      return;
+    }
+    act(() => updateUserRole(user._id, choice), "Role updated");
+  };
+
+  const handleDelete = () => {
+    if (!window.confirm(`Delete ${user.name}? This cannot be undone.`)) return;
+    act(() => deleteUser(user._id), "User deleted");
+  };
+
+  const isAdmin = user.userRole === "admin";
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen(!open)}
+        className="p-1.5 rounded-md transition-colors"
+        style={{ color: "var(--foreground-dim)" }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = "var(--foreground)"; e.currentTarget.style.background = "var(--surface)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = "var(--foreground-dim)"; e.currentTarget.style.background = "transparent"; }}
+      >
+        <MoreVertical className="h-4 w-4" />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-44 rounded-xl z-50 overflow-hidden shadow-2xl"
+          style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          <div className="py-1">
+            {user.accountStatus === "suspended" ? (
+              <button onClick={() => act(() => activateUser(user._id), "User activated")}
+                className="w-full text-left px-4 py-2 text-xs transition-colors"
+                style={{ color: "#34D399" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+                ✓ Activate account
+              </button>
+            ) : (
+              !isAdmin && (
+                <button onClick={handleSuspend}
+                  className="w-full text-left px-4 py-2 text-xs transition-colors"
+                  style={{ color: "#FBB040" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+                  ⊘ Suspend account
+                </button>
+              )
+            )}
+            {!isAdmin && (
+              <button onClick={handleRole}
+                className="w-full text-left px-4 py-2 text-xs transition-colors"
+                style={{ color: "var(--foreground-muted)" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+                ↕ Change role
+              </button>
+            )}
+            {!isAdmin && (
+              <button onClick={handleDelete}
+                className="w-full text-left px-4 py-2 text-xs transition-colors"
+                style={{ color: "#F87171" }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
+                ✕ Delete user
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Filter dropdown ─────────────────────────────────────────────────────── */
+function Filter2({ label, options, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const active = value !== options[0].value;
+  const selected = options.find((o) => o.value === value) || options[0];
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-all"
+        style={{
+          background: active ? "rgba(13,81,255,0.12)" : "rgba(255,255,255,0.05)",
+          border: `1px solid ${active ? "rgba(13,81,255,0.4)" : "rgba(255,255,255,0.09)"}`,
+          color: active ? "#6B9FFF" : "var(--foreground-muted)",
+        }}>
+        {active ? selected.label : label}
+        <ChevronDown className="h-3 w-3 opacity-60" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 rounded-xl z-50 overflow-hidden shadow-2xl"
+          style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.1)", minWidth: 140, boxShadow: "0 16px 40px rgba(0,0,0,0.5)" }}>
+          <div className="py-1.5">
+            {options.map((opt) => (
+              <button key={opt.value} onClick={() => { onChange(opt.value); setOpen(false); }}
+                className="w-full flex items-center justify-between px-4 py-2 text-xs transition-colors"
+                style={{ color: opt.value === value ? "#6B9FFF" : "var(--foreground-muted)", background: opt.value === value ? "rgba(13,81,255,0.1)" : "transparent" }}
+                onMouseEnter={(e) => { if (opt.value !== value) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { if (opt.value !== value) e.currentTarget.style.background = opt.value === value ? "rgba(13,81,255,0.1)" : "transparent"; }}>
+                <span className={opt.value === value ? "font-semibold" : "font-medium"}>{opt.label}</span>
+                {opt.value === value && <Check className="h-3 w-3" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const ROLE_OPTS   = [{ value:"all", label:"All roles" }, { value:"job_seeker", label:"Job Seekers" }, { value:"recruiter", label:"Recruiters" }, { value:"admin", label:"Admins" }];
+const STATUS_OPTS = [{ value:"all", label:"All statuses" }, { value:"active", label:"Active" }, { value:"suspended", label:"Suspended" }];
+
+/* ── Page ────────────────────────────────────────────────────────────────── */
+export default function UserManagementPage() {
+  const [users, setUsers]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [roleFilter, setRole]     = useState("all");
+  const [statusFilter, setStatus] = useState("all");
+  const [searchTerm, setSearch]   = useState("");
+  const [page, setPage]           = useState(1);
+  const [totalPages, setTotal]    = useState(1);
+
+  const fetch = useCallback(async (pg = page) => {
     setLoading(true);
     try {
-      const filters = {
-        page: currentPage,
-        limit: 20,
-        role: roleFilter !== 'all' ? roleFilter : undefined,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
-        search: searchTerm || undefined
-      };
-
-      const response = await getAllUsers(filters);
-      if (response.success) {
-        setUsers(response.users);
-        setTotalPages(response.pagination?.pages || 1);
+      const res = await getAllUsers({
+        page: pg, limit: 20,
+        role: roleFilter !== "all" ? roleFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+        search: searchTerm || undefined,
+      });
+      if (res.success) {
+        setUsers(res.users);
+        setTotal(res.pagination?.pages || 1);
       }
-    } catch (error) {
-      toast.error(error.message || 'Failed to fetch users');
+    } catch (e) {
+      toast.error(e.message || "Failed to load users", TOAST);
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, statusFilter, currentPage, searchTerm]);
+  }, [roleFilter, statusFilter, page, searchTerm]);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  useEffect(() => { fetch(); }, [fetch]);
 
-  const handleSearch = () => {
-    setCurrentPage(1);
-    fetchUsers();
-  };
-
-  const handleSuspend = async (userId, userName) => {
-    const reason = prompt(`Enter reason for suspending ${userName}:`);
-    if (!reason) return;
-
-    try {
-      const response = await suspendUser(userId, reason);
-      if (response.success) {
-        toast.success('User suspended successfully');
-        fetchUsers();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to suspend user');
-    }
-  };
-
-  const handleActivate = async (userId) => {
-    try {
-      const response = await activateUser(userId);
-      if (response.success) {
-        toast.success('User activated successfully');
-        fetchUsers();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to activate user');
-    }
-  };
-
-  const handleDelete = async (userId, userName) => {
-    if (!confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) return;
-
-    try {
-      const response = await deleteUser(userId);
-      if (response.success) {
-        toast.success('User deleted successfully');
-        fetchUsers();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to delete user');
-    }
-  };
-
-  const handleChangeRole = async (userId, userName, currentRole) => {
-    const newRole = prompt(`Change role for ${userName} to (job_seeker/recruiter/admin):`, currentRole);
-    if (!newRole || !['job_seeker', 'recruiter', 'admin'].includes(newRole)) {
-      toast.error('Invalid role');
-      return;
-    }
-
-    try {
-      const response = await updateUserRole(userId, newRole);
-      if (response.success) {
-        toast.success('User role updated successfully');
-        fetchUsers();
-      }
-    } catch (error) {
-      toast.error(error.message || 'Failed to update role');
-    }
-  };
-
-  const getRoleBadge = (role) => {
-    const colors = {
-      job_seeker: 'bg-blue-100 text-blue-800',
-      recruiter: 'bg-orange-100 text-orange-800',
-      admin: 'bg-purple-100 text-purple-800'
-    };
-    return colors[role] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusBadge = (status) => {
-    return status === 'active'
-      ? 'bg-green-100 text-green-800'
-      : 'bg-red-100 text-red-800';
-  };
+  const refresh = () => fetch(page);
 
   return (
-    <RoleGuard allowedRoles={['admin']}>
-      <DashboardNav />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50">
-        <header className="bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-              <Users />
-              User Management
-            </h1>
-            <p className="text-purple-100 mt-1">Manage user accounts and permissions</p>
+    <RoleGuard allowedRoles={["admin"]}>
+      <Toaster position="top-center" />
+      <div className="min-h-screen bg-background flex">
+        <Sidebar />
+
+        <div className="ml-60 flex-1 min-w-0">
+          {/* Top bar */}
+          <div className="sticky top-0 z-30 flex items-center justify-between px-6 h-14 border-b"
+            style={{ background: "var(--background)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-3">
+              <Users className="h-4 w-4" style={{ color: "var(--foreground-dim)" }} />
+              <h1 className="text-sm font-semibold text-foreground">User Management</h1>
+            </div>
+            <button onClick={refresh} disabled={loading}
+              className="flex items-center gap-1.5 text-xs btn-outline disabled:opacity-40">
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
           </div>
-        </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Breadcrumb
-            items={[
-              { label: 'Admin Dashboard', href: '/admin' },
-              { label: 'User Management', href: null }
-            ]}
-          />
+          <div className="px-6 py-5 space-y-4">
+            {/* Search + filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-52 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: "var(--foreground-dim)" }} />
+                <input
+                  type="text"
+                  placeholder="Search name or email…"
+                  value={searchTerm}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { setPage(1); fetch(1); } }}
+                  className="w-full pl-8 pr-3 py-2 text-sm rounded-lg outline-none"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.09)", color: "var(--foreground)" }}
+                  onFocus={(e) => { e.target.style.borderColor = "rgba(13,81,255,0.5)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; }}
+                />
+              </div>
+              <Filter2 label="Role" options={ROLE_OPTS} value={roleFilter} onChange={(v) => { setRole(v); setPage(1); }} />
+              <Filter2 label="Status" options={STATUS_OPTS} value={statusFilter} onChange={(v) => { setStatus(v); setPage(1); }} />
+              <span className="ml-auto text-xs" style={{ color: "var(--foreground-dim)" }}>
+                {users.length} user{users.length !== 1 ? "s" : ""}
+              </span>
+            </div>
 
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Search Users
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search by name or email..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300"
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                  />
-                  <button
-                    onClick={handleSearch}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                  >
-                    <Search size={20} />
-                  </button>
+            {/* Table */}
+            <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+              {/* Header */}
+              <div className="grid grid-cols-12 px-5 py-2.5 text-[0.67rem] font-semibold tracking-wider border-b"
+                style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)", color: "var(--foreground-dim)" }}>
+                <span className="col-span-4">USER</span>
+                <span className="col-span-2">ROLE</span>
+                <span className="col-span-2">STATUS</span>
+                <span className="col-span-2">JOINED</span>
+                <span className="col-span-1">SKILLS</span>
+                <span className="col-span-1 text-right">ACTIONS</span>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-20"><div className="spinner h-7 w-7" /></div>
+              ) : users.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-2">
+                  <Users className="h-10 w-10 opacity-30" style={{ color: "var(--foreground-dim)" }} />
+                  <p className="text-sm text-foreground font-medium">No users found</p>
+                  <p className="text-xs" style={{ color: "var(--foreground-muted)" }}>Try adjusting your filters</p>
                 </div>
-              </div>
+              ) : (
+                users.map((u) => {
+                  const role   = ROLE_STYLE[u.userRole]   || ROLE_STYLE.job_seeker;
+                  const status = STATUS_STYLE[u.accountStatus] || STATUS_STYLE.active;
+                  const RoleIcon = role.icon;
+                  return (
+                    <div key={u._id}
+                      className="grid grid-cols-12 items-center px-5 py-3.5 border-b transition-colors"
+                      style={{ borderColor: "rgba(255,255,255,0.055)" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
 
-              {/* Role Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by Role
-                </label>
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300"
-                >
-                  <option value="all">All Roles</option>
-                  <option value="job_seeker">Job Seekers</option>
-                  <option value="recruiter">Recruiters</option>
-                  <option value="admin">Admins</option>
-                </select>
-              </div>
+                      {/* User */}
+                      <div className="col-span-4 flex items-center gap-3 min-w-0">
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center font-semibold text-sm text-white shrink-0"
+                          style={{ background: role.color + "30", color: role.color, border: `1px solid ${role.color}40` }}>
+                          {u.name?.charAt(0).toUpperCase() || "?"}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{u.name}</p>
+                          <p className="text-[0.7rem] truncate" style={{ color: "var(--foreground-dim)" }}>{u.email}</p>
+                        </div>
+                      </div>
 
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Filter by Status
-                </label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-300"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
+                      {/* Role */}
+                      <div className="col-span-2">
+                        <span className="inline-flex items-center gap-1 text-[0.67rem] font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: role.bg, color: role.color }}>
+                          <RoleIcon className="h-2.5 w-2.5" />
+                          {role.label}
+                        </span>
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-2">
+                        <span className="text-[0.67rem] font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: status.bg, color: status.color }}>
+                          {status.label}
+                        </span>
+                      </div>
+
+                      {/* Joined */}
+                      <div className="col-span-2 text-xs" style={{ color: "var(--foreground-muted)" }}>
+                        {u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"2-digit" }) : "—"}
+                      </div>
+
+                      {/* Skills count */}
+                      <div className="col-span-1 text-xs font-semibold text-foreground">
+                        {u.skills?.length > 0 ? u.skills.length : <span style={{ color: "var(--foreground-dim)" }}>—</span>}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="col-span-1 flex justify-end">
+                        <ActionMenu user={u} onRefresh={refresh} />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
-          </div>
-
-          {/* Users Table */}
-          <div className="bg-white rounded-lg shadow-lg mt-6">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Users ({users.length})
-              </h2>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-10">Loading users...</div>
-            ) : users.length === 0 ? (
-              <div className="text-center py-10 text-gray-600">No users found</div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Joined</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {users.map((user) => (
-                      <tr key={user._id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-600">{user.email}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getRoleBadge(user.userRole)}`}>
-                            {user.userRole ? user.userRole.replace('_', ' ').toUpperCase() : 'UNKNOWN'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(user.accountStatus)}`}>
-                            {user.accountStatus ? user.accountStatus.toUpperCase() : 'UNKNOWN'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                          {new Date(user.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex justify-end gap-2">
-                            <button
-                              onClick={() => router.push(`/admin/users/${user._id}`)}
-                              className="text-blue-600 hover:text-blue-800"
-                              title="View Details"
-                            >
-                              <Eye size={18} />
-                            </button>
-
-                            {user.accountStatus === 'active' ? (
-                              <button
-                                onClick={() => handleSuspend(user._id, user.name)}
-                                className="text-orange-600 hover:text-orange-800"
-                                title="Suspend User"
-                              >
-                                <Ban size={18} />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleActivate(user._id)}
-                                className="text-green-600 hover:text-green-800"
-                                title="Activate User"
-                              >
-                                <CheckCircle size={18} />
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleChangeRole(user._id, user.name, user.userRole)}
-                              className="text-purple-600 hover:text-purple-800"
-                              title="Change Role"
-                            >
-                              <UserCog size={18} />
-                            </button>
-
-                            <button
-                              onClick={() => handleDelete(user._id, user.name)}
-                              className="text-red-600 hover:text-red-800"
-                              title="Delete User"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={currentPage === 1}
-                  className={`px-4 py-2 rounded-md ${
-                    currentPage === 1
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
-                  }`}
-                >
-                  Previous
+              <div className="flex items-center justify-center gap-1.5">
+                <button onClick={() => setPage(page - 1)} disabled={page === 1}
+                  className="text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-30"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.09)", color: "var(--foreground-muted)" }}>
+                  ← Prev
                 </button>
-                <span className="text-sm text-gray-700">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                  disabled={currentPage === totalPages}
-                  className={`px-4 py-2 rounded-md ${
-                    currentPage === totalPages
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : 'bg-purple-600 text-white hover:bg-purple-700'
-                  }`}
-                >
-                  Next
+                <span className="text-xs px-3" style={{ color: "var(--foreground-dim)" }}>{page} / {totalPages}</span>
+                <button onClick={() => setPage(page + 1)} disabled={page === totalPages}
+                  className="text-xs px-4 py-2 rounded-lg transition-colors disabled:opacity-30"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.09)", color: "var(--foreground-muted)" }}>
+                  Next →
                 </button>
               </div>
             )}
           </div>
-        </main>
+        </div>
       </div>
     </RoleGuard>
   );

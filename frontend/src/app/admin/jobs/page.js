@@ -1,303 +1,273 @@
-'use client';
+"use client";
+import { useEffect, useState, useCallback, useRef } from "react";
+import RoleGuard from "@/components/RoleGuard";
+import { Sidebar } from "@/components/ui/Sidebar";
+import { getAllJobs, closeAnyJob } from "@/services/adminService";
+import toast, { Toaster } from "react-hot-toast";
+import { Briefcase, Search, RefreshCw, MapPin, XCircle, ChevronDown, Check } from "lucide-react";
 
-import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import RoleGuard from '@/components/RoleGuard';
-import DashboardNav from '@/components/DashboardNav';
-import Breadcrumb from '@/components/Breadcrumb';
-import { getAllJobs } from '@/services/adminService';
-import toast from 'react-hot-toast';
-import { Briefcase, Search, Filter, Trash2, Eye } from 'lucide-react';
+const TOAST = { style: { background: "#252219", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" } };
+
+const SOURCE_STYLE = {
+  recruiter: { bg: "rgba(13,81,255,0.1)",   color: "#6B9FFF",  label: "Posted" },
+  telegram:  { bg: "rgba(38,165,228,0.1)",  color: "#26A5E4",  label: "Telegram" },
+  timesjob:  { bg: "rgba(232,77,61,0.1)",   color: "#E84D3D",  label: "TimesJobs" },
+  timesjobs: { bg: "rgba(232,77,61,0.1)",   color: "#E84D3D",  label: "TimesJobs" },
+  hirejobs:  { bg: "rgba(124,58,237,0.1)",  color: "#7C3AED",  label: "HireJobs" },
+  instahyre: { bg: "rgba(5,150,105,0.1)",   color: "#059669",  label: "Instahyre" },
+};
+const STATUS_STYLE = {
+  active: { bg: "rgba(16,185,129,0.1)",  color: "#34D399", label: "Active" },
+  draft:  { bg: "rgba(245,158,11,0.1)",  color: "#FBB040", label: "Draft" },
+  closed: { bg: "rgba(107,114,128,0.1)", color: "#6B7280", label: "Closed" },
+};
+
+function FilterPill({ label, options, value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const h = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", h);
+    return () => document.removeEventListener("mousedown", h);
+  }, []);
+  const active  = value !== options[0].value;
+  const selected = options.find((o) => o.value === value) || options[0];
+  return (
+    <div className="relative" ref={ref}>
+      <button onClick={() => setOpen(!open)}
+        className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg transition-all"
+        style={{
+          background: active ? "rgba(13,81,255,0.12)" : "rgba(255,255,255,0.05)",
+          border: `1px solid ${active ? "rgba(13,81,255,0.4)" : "rgba(255,255,255,0.09)"}`,
+          color: active ? "#6B9FFF" : "var(--foreground-muted)",
+        }}>
+        {active ? selected.label : label}
+        <ChevronDown className="h-3 w-3 opacity-60" />
+      </button>
+      {open && (
+        <div className="absolute top-full left-0 mt-1.5 rounded-xl z-50 overflow-hidden shadow-2xl"
+          style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.1)", minWidth: 150, boxShadow: "0 16px 40px rgba(0,0,0,0.5)" }}>
+          <div className="py-1.5">
+            {options.map((opt) => (
+              <button key={opt.value} onClick={() => { onChange(opt.value); setOpen(false); }}
+                className="w-full flex items-center justify-between px-4 py-2 text-xs transition-colors"
+                style={{ color: opt.value === value ? "#6B9FFF" : "var(--foreground-muted)", background: opt.value === value ? "rgba(13,81,255,0.1)" : "transparent" }}
+                onMouseEnter={(e) => { if (opt.value !== value) e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+                onMouseLeave={(e) => { if (opt.value !== value) e.currentTarget.style.background = "transparent"; }}>
+                <span className={opt.value === value ? "font-semibold" : "font-medium"}>{opt.label}</span>
+                {opt.value === value && <Check className="h-3 w-3" />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const SOURCE_OPTS = [
+  { value:"all", label:"All sources" }, { value:"recruiter", label:"Recruiter posted" },
+  { value:"telegram", label:"Telegram" }, { value:"timesjob", label:"TimesJobs" },
+  { value:"hirejobs", label:"HireJobs" }, { value:"instahyre", label:"Instahyre" },
+];
+const STATUS_OPTS = [
+  { value:"all", label:"All statuses" }, { value:"active", label:"Active" },
+  { value:"draft", label:"Draft" }, { value:"closed", label:"Closed" },
+];
 
 export default function AdminJobsPage() {
-  const router = useRouter();
-  const [jobs, setJobs] = useState([]);
+  const [jobs, setJobs]       = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filters, setFilters] = useState({
-    page: 1,
-    limit: 20,
-    search: '',
-    source: 'all',
-    status: 'all'
-  });
-  const [totalJobs, setTotalJobs] = useState(0);
+  const [total, setTotal]     = useState(0);
+  const [search, setSearch]   = useState("");
+  const [source, setSource]   = useState("all");
+  const [status, setStatus]   = useState("all");
+  const [page, setPage]       = useState(1);
+  const [totalPages, setPages]= useState(1);
 
-  // Force light mode for admin pages
-  useEffect(() => {
-    document.documentElement.classList.add('light');
-    return () => {
-      // Restore theme when leaving admin pages
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme === 'dark') {
-        document.documentElement.classList.remove('light');
-      }
-    };
-  }, []);
-
-  const fetchJobs = useCallback(async () => {
+  const fetch = useCallback(async (pg = page) => {
     setLoading(true);
     try {
-      const queryFilters = {
-        page: filters.page,
-        limit: filters.limit,
-        ...(filters.search && { search: filters.search }),
-        ...(filters.source !== 'all' && { source: filters.source }),
-        ...(filters.status !== 'all' && { status: filters.status })
-      };
-
-      const response = await getAllJobs(queryFilters);
-      if (response.success) {
-        setJobs(response.jobs);
-        setTotalJobs(response.pagination?.total || 0);
+      const res = await getAllJobs({
+        page: pg, limit: 25,
+        search: search || undefined,
+        source: source !== "all" ? source : undefined,
+        status: status !== "all" ? status : undefined,
+      });
+      if (res.success) {
+        setJobs(res.jobs);
+        setTotal(res.pagination?.total || res.jobs.length);
+        setPages(res.pagination?.pages || 1);
       }
-    } catch (error) {
-      toast.error(error.message || 'Failed to load jobs');
+    } catch (e) {
+      toast.error(e.message || "Failed to load jobs", TOAST);
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [search, source, status, page]);
 
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
+  useEffect(() => { fetch(); }, [fetch]);
 
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value, page: 1 }));
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchJobs();
-  };
-
-  const getSourceBadge = (source) => {
-    const colors = {
-      recruiter: 'bg-blue-100 text-blue-800',
-      telegram: 'bg-purple-100 text-purple-800',
-      timesjob: 'bg-green-100 text-green-800',
-      hirejobs: 'bg-yellow-100 text-yellow-800',
-      instahyre: 'bg-pink-100 text-pink-800'
-    };
-    return colors[source] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusBadge = (status) => {
-    const colors = {
-      active: 'bg-green-100 text-green-800',
-      draft: 'bg-yellow-100 text-yellow-800',
-      closed: 'bg-red-100 text-red-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+  const handleClose = async (id) => {
+    if (!window.confirm("Close this job listing?")) return;
+    try {
+      const res = await closeAnyJob(id);
+      if (res.success) { toast.success("Job closed", TOAST); fetch(page); }
+    } catch (e) { toast.error(e.message || "Failed", TOAST); }
   };
 
   return (
-    <RoleGuard allowedRoles={['admin']}>
-      <DashboardNav />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50">
-        {/* Header */}
-        <header className="bg-gradient-to-r from-purple-600 to-blue-600 shadow-lg">
-          <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Briefcase size={32} />
-              All Jobs Management
-            </h1>
-            <p className="text-purple-100 mt-1">Manage all job postings across all sources</p>
+    <RoleGuard allowedRoles={["admin"]}>
+      <Toaster position="top-center" />
+      <div className="min-h-screen bg-background flex">
+        <Sidebar />
+
+        <div className="ml-60 flex-1 min-w-0">
+          {/* Top bar */}
+          <div className="sticky top-0 z-30 flex items-center justify-between px-6 h-14 border-b"
+            style={{ background: "var(--background)", borderColor: "rgba(255,255,255,0.07)" }}>
+            <div className="flex items-center gap-3">
+              <Briefcase className="h-4 w-4" style={{ color: "var(--foreground-dim)" }} />
+              <h1 className="text-sm font-semibold text-foreground">All Jobs</h1>
+              <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "rgba(255,255,255,0.06)", color: "var(--foreground-dim)" }}>
+                {total.toLocaleString()}
+              </span>
+            </div>
+            <button onClick={() => fetch(page)} disabled={loading}
+              className="flex items-center gap-1.5 text-xs btn-outline disabled:opacity-40">
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
           </div>
-        </header>
 
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Breadcrumb
-            items={[
-              { label: 'Admin Dashboard', href: '/admin' },
-              { label: 'Jobs', href: null }
-            ]}
-          />
-
-          {/* Filters */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mt-6 border border-purple-200">
-            <div className="flex items-center gap-2 mb-4">
-              <Filter size={20} className="text-purple-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Filters</h2>
+          <div className="px-6 py-5 space-y-4">
+            {/* Search + filters */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1 min-w-52 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none" style={{ color: "var(--foreground-dim)" }} />
+                <input
+                  type="text"
+                  placeholder="Search title or company…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") { setPage(1); fetch(1); } }}
+                  className="w-full pl-8 pr-3 py-2 text-sm rounded-lg outline-none"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.09)", color: "var(--foreground)" }}
+                  onFocus={(e) => { e.target.style.borderColor = "rgba(13,81,255,0.5)"; }}
+                  onBlur={(e) => { e.target.style.borderColor = "rgba(255,255,255,0.09)"; }}
+                />
+              </div>
+              <FilterPill label="Source" options={SOURCE_OPTS} value={source} onChange={(v) => { setSource(v); setPage(1); }} />
+              <FilterPill label="Status" options={STATUS_OPTS} value={status} onChange={(v) => { setStatus(v); setPage(1); }} />
+              <span className="ml-auto text-xs" style={{ color: "var(--foreground-dim)" }}>
+                {jobs.length} shown
+              </span>
             </div>
 
-            <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Search */}
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={filters.search}
-                    onChange={(e) => handleFilterChange('search', e.target.value)}
-                    placeholder="Search by title or company..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                  <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            {/* Table */}
+            <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.07)" }}>
+              {/* Header */}
+              <div className="grid grid-cols-12 px-5 py-2.5 text-[0.67rem] font-semibold tracking-wider border-b"
+                style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)", color: "var(--foreground-dim)" }}>
+                <span className="col-span-4">JOB</span>
+                <span className="col-span-2">SOURCE</span>
+                <span className="col-span-2">STATUS</span>
+                <span className="col-span-2">POSTED</span>
+                <span className="col-span-1 text-center">APPS</span>
+                <span className="col-span-1 text-right">ACTION</span>
+              </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-20"><div className="spinner h-7 w-7" /></div>
+              ) : jobs.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-2">
+                  <Briefcase className="h-10 w-10 opacity-30" style={{ color: "var(--foreground-dim)" }} />
+                  <p className="text-sm font-medium text-foreground">No jobs found</p>
                 </div>
-              </div>
+              ) : (
+                jobs.map((job, i) => {
+                  const src = SOURCE_STYLE[job.source?.toLowerCase()] || SOURCE_STYLE.recruiter;
+                  const sts = STATUS_STYLE[job.status] || STATUS_STYLE.active;
+                  return (
+                    <div key={job._id || i}
+                      className="grid grid-cols-12 items-center px-5 py-3.5 border-b transition-colors"
+                      style={{ borderColor: "rgba(255,255,255,0.055)" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.025)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
 
-              {/* Source Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Source</label>
-                <select
-                  value={filters.source}
-                  onChange={(e) => handleFilterChange('source', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="all">All Sources</option>
-                  <option value="recruiter">Recruiter Posted</option>
-                  <option value="telegram">Telegram</option>
-                  <option value="timesjob">TimesJob</option>
-                  <option value="hirejobs">HireJobs</option>
-                  <option value="instahyre">Instahyre</option>
-                </select>
-              </div>
-
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="draft">Draft</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-            </form>
-          </div>
-
-          {/* Jobs Table */}
-          <div className="bg-white rounded-lg shadow-lg mt-6 border border-purple-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">
-                All Jobs ({totalJobs})
-              </h2>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-20">
-                <div className="text-xl text-gray-600">Loading jobs...</div>
-              </div>
-            ) : jobs.length === 0 ? (
-              <div className="text-center py-20">
-                <Briefcase className="mx-auto text-gray-400 mb-4" size={64} />
-                <p className="text-gray-600 text-lg">No jobs found</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gradient-to-r from-purple-50 to-blue-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Job Details
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Source
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Status
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Posted Date
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Applications
-                      </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider">
-                        Actions
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {jobs.map((job) => (
-                      <tr key={job._id} className="hover:bg-purple-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="text-sm font-medium text-gray-900">{job.title}</div>
-                            <div className="text-sm text-gray-500">{job.company}</div>
-                            {job.location && (
-                              <div className="text-xs text-gray-400 mt-1">📍 {job.location}</div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getSourceBadge(job.source)}`}>
-                            {job.source}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          {job.status && (
-                            <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(job.status)}`}>
-                              {job.status}
-                            </span>
+                      {/* Job */}
+                      <div className="col-span-4 min-w-0 pr-3">
+                        <p className="text-sm font-semibold text-foreground truncate">{job.title}</p>
+                        <div className="flex items-center gap-1.5 mt-0.5 text-[0.7rem]" style={{ color: "var(--foreground-muted)" }}>
+                          <span className="font-medium truncate max-w-[120px]">{job.company}</span>
+                          {job.location && (
+                            <><span style={{ color: "var(--foreground-dim)" }}>·</span>
+                            <span className="flex items-center gap-0.5 truncate max-w-[100px]">
+                              <MapPin className="h-2.5 w-2.5 shrink-0" />{job.location}
+                            </span></>
                           )}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {job.createdAt ? new Date(job.createdAt).toLocaleDateString() : 'N/A'}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {job.applicationsCount || 0}
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm font-medium">
-                          <button
-                            onClick={() => {
-                              if (job.source === 'recruiter') {
-                                router.push(`/recruiter/jobs/${job._id}`);
-                              } else {
-                                toast.info('Viewing details for scraped jobs coming soon');
-                              }
-                            }}
-                            className="text-purple-600 hover:text-purple-900 mr-3"
-                            title="View Details"
-                          >
-                            <Eye size={18} />
+                        </div>
+                      </div>
+
+                      {/* Source */}
+                      <div className="col-span-2">
+                        <span className="text-[0.67rem] font-semibold px-2 py-0.5 rounded-full"
+                          style={{ background: src.bg, color: src.color }}>{src.label}</span>
+                      </div>
+
+                      {/* Status */}
+                      <div className="col-span-2">
+                        <span className="text-[0.67rem] font-semibold px-2 py-0.5 rounded-full capitalize"
+                          style={{ background: sts.bg, color: sts.color }}>{sts.label}</span>
+                      </div>
+
+                      {/* Posted date */}
+                      <div className="col-span-2 text-xs" style={{ color: "var(--foreground-muted)" }}>
+                        {job.createdAt ? new Date(job.createdAt).toLocaleDateString("en-IN", { day:"2-digit", month:"short", year:"2-digit" }) : "—"}
+                      </div>
+
+                      {/* Apps count */}
+                      <div className="col-span-1 text-center text-sm font-semibold text-foreground">
+                        {job.applicationsCount ?? 0}
+                      </div>
+
+                      {/* Action */}
+                      <div className="col-span-1 flex justify-end">
+                        {job.status !== "closed" && job.source === "recruiter" && (
+                          <button onClick={() => handleClose(job._id)}
+                            className="p-1.5 rounded-md transition-colors"
+                            style={{ color: "var(--foreground-dim)" }}
+                            onMouseEnter={(e) => { e.currentTarget.style.color = "var(--error)"; e.currentTarget.style.background = "var(--surface)"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = "var(--foreground-dim)"; e.currentTarget.style.background = "transparent"; }}
+                            title="Close job">
+                            <XCircle className="h-4 w-4" />
                           </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
 
             {/* Pagination */}
-            {totalJobs > filters.limit && (
-              <div className="px-6 py-4 border-t border-gray-200 flex justify-between items-center">
-                <div className="text-sm text-gray-600">
-                  Showing {(filters.page - 1) * filters.limit + 1} to {Math.min(filters.page * filters.limit, totalJobs)} of {totalJobs} jobs
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleFilterChange('page', filters.page - 1)}
-                    disabled={filters.page === 1}
-                    className={`px-4 py-2 rounded-md ${
-                      filters.page === 1
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                    }`}
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => handleFilterChange('page', filters.page + 1)}
-                    disabled={filters.page * filters.limit >= totalJobs}
-                    className={`px-4 py-2 rounded-md ${
-                      filters.page * filters.limit >= totalJobs
-                        ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        : 'bg-purple-600 text-white hover:bg-purple-700'
-                    }`}
-                  >
-                    Next
-                  </button>
-                </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-1.5">
+                <button onClick={() => setPage(page - 1)} disabled={page === 1}
+                  className="text-xs px-4 py-2 rounded-lg disabled:opacity-30 transition-colors"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.09)", color: "var(--foreground-muted)" }}>
+                  ← Prev
+                </button>
+                <span className="text-xs px-3" style={{ color: "var(--foreground-dim)" }}>{page} / {totalPages}</span>
+                <button onClick={() => setPage(page + 1)} disabled={page === totalPages}
+                  className="text-xs px-4 py-2 rounded-lg disabled:opacity-30 transition-colors"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.09)", color: "var(--foreground-muted)" }}>
+                  Next →
+                </button>
               </div>
             )}
           </div>
-        </main>
+        </div>
       </div>
     </RoleGuard>
   );
