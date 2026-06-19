@@ -15,16 +15,10 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from scraper_utils import get_collection, generate_job_hash, bulk_upsert_jobs, filter_jobs
+from job_roles import JOB_ROLES
 
 # DEBUG_MODE: set True only for local development to see the browser window
 DEBUG_MODE = False
-
-JOB_ROLES = [
-    "Software Engineer",
-    "Full Stack Developer",
-    "Frontend Developer",
-    "Backend Developer",
-]
 
 # ── Chrome setup ──────────────────────────────────────────────────────────────
 options = webdriver.ChromeOptions()

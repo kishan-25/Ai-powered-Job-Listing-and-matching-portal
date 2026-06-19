@@ -18,7 +18,7 @@ const userRoutes = require('./routes/userRoutes');
 const generateCoverLetterRoute = require("./routes/generateCoverLetter");
 const { protect } = require("./middlewares/authMiddleware");
 const { isAdmin } = require("./middlewares/roleMiddleware");
-const { startScheduler, runAllScrapers } = require("./scheduler");
+const { startScheduler, runAllScrapers, getSchedulerStatus } = require("./scheduler");
 
 const app = express();
 
@@ -150,9 +150,20 @@ app.use('/api/v1/recruiter', recruiterRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/users', userRoutes);
 
-// ── Manual scraper trigger — admin only ──────────────────────────────────────
+// ── Scraper admin endpoints ───────────────────────────────────────────────────
+// GET  /api/v1/admin/scheduler-status  — health + last 10 runs
+app.get("/api/v1/admin/scheduler-status", protect, isAdmin, async (req, res) => {
+    try {
+        const status = await getSchedulerStatus();
+        res.json({ success: true, ...status });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
+// POST /api/v1/admin/run-scrapers — trigger immediately (background)
 app.post("/api/v1/admin/run-scrapers", protect, isAdmin, (req, res) => {
-    res.json({ success: true, message: "Scraper run started. Check server logs for progress." });
+    res.json({ success: true, message: "Scraper run started in background. Check /scheduler-status for progress." });
     runAllScrapers(`manual by ${req.user?.email || "admin"}`).catch((err) => {
         console.error("Manual scraper run failed:", err.message);
     });

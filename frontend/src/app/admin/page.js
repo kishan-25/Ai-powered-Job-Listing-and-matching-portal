@@ -5,7 +5,10 @@ import RoleGuard from "@/components/RoleGuard";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { getSystemAnalytics } from "@/services/adminService";
 import toast, { Toaster } from "react-hot-toast";
-import { Users, Briefcase, FileText, UserCheck, UserX, RefreshCw } from "lucide-react";
+import { Users, Briefcase, FileText, UserCheck, UserX, RefreshCw, Play, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import axios from "axios";
+import { API_BASE_URL } from "@/config/api";
+import { getToken } from "@/services/authService";
 
 const TOAST = { style: { background: "#252219", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" } };
 
@@ -36,8 +39,10 @@ function BarRow({ label, value, max }) {
 }
 
 export default function AdminDashboard() {
-  const [data, setData]       = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]             = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [schedStatus, setSchedStatus] = useState(null);
+  const [scraping, setScraping]     = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -51,7 +56,33 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  const loadSchedulerStatus = async () => {
+    try {
+      const token = getToken();
+      const res = await axios.get(`${API_BASE_URL}/api/v1/admin/scheduler-status`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.data.success) setSchedStatus(res.data);
+    } catch { /* non-critical */ }
+  };
+
+  const triggerScraper = async () => {
+    setScraping(true);
+    try {
+      const token = getToken();
+      await axios.post(`${API_BASE_URL}/api/v1/admin/run-scrapers`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Scrapers started in background! Check back in ~30 minutes.", TOAST);
+      setTimeout(loadSchedulerStatus, 5000);
+    } catch (e) {
+      toast.error(e.response?.data?.message || "Failed to trigger scrapers", TOAST);
+    } finally {
+      setScraping(false);
+    }
+  };
+
+  useEffect(() => { load(); loadSchedulerStatus(); }, []);
 
   const u = data?.users;
   const j = data?.jobs;
@@ -135,6 +166,77 @@ export default function AdminDashboard() {
                   <StatBlock label="Pending"          value={a?.byStatus?.pending}          icon={FileText} />
                   <StatBlock label="Shortlisted"      value={a?.byStatus?.shortlisted}      icon={FileText} />
                   <StatBlock label="Interview Sched." value={a?.byStatus?.interviewScheduled} icon={FileText} />
+                </div>
+              </section>
+
+              {/* Scraper scheduler */}
+              <section>
+                <p className="text-xs font-semibold text-foreground-dim uppercase tracking-widest mb-4">Scraper Pipeline</p>
+                <div className="rounded-2xl p-5 space-y-4"
+                  style={{ background: "var(--surface-2)", border: "1px solid rgba(255,255,255,0.07)" }}>
+
+                  {/* Status row */}
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className={`h-2 w-2 rounded-full ${schedStatus?.schedulerAlive ? "bg-match-high" : "bg-error"}`}
+                          style={{ boxShadow: schedStatus?.schedulerAlive ? "0 0 6px #10B981" : "0 0 6px #EF4444" }} />
+                        <p className="text-sm font-semibold text-foreground">
+                          {schedStatus?.schedulerAlive ? "Scheduler running" : "Scheduler offline"}
+                        </p>
+                      </div>
+                      {schedStatus?.nextRunIST && (
+                        <p className="text-xs flex items-center gap-1.5" style={{ color: "var(--foreground-muted)" }}>
+                          <Clock className="h-3 w-3" />
+                          Next run: <span className="text-foreground font-medium">{schedStatus.nextRunIST}</span>
+                          &nbsp;·&nbsp;{schedStatus.scraperCount} scrapers · {schedStatus.maxRetries} retries each
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={triggerScraper}
+                      disabled={scraping}
+                      className="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                      style={{ background: "var(--primary)", color: "#fff" }}>
+                      {scraping
+                        ? <><RefreshCw className="h-3.5 w-3.5 animate-spin" />Starting…</>
+                        : <><Play className="h-3.5 w-3.5" />Run scrapers now</>}
+                    </button>
+                  </div>
+
+                  {/* Last 5 runs */}
+                  {schedStatus?.lastRuns?.length > 0 && (
+                    <div>
+                      <p className="text-[0.67rem] font-bold uppercase tracking-widest mb-2"
+                        style={{ color: "var(--foreground-dim)" }}>Recent runs</p>
+                      <div className="space-y-1.5">
+                        {schedStatus.lastRuns.slice(0, 5).map((run, i) => {
+                          const icon = run.status === "success"
+                            ? <CheckCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "#34D399" }} />
+                            : run.status === "partial"
+                            ? <AlertCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "#FBB040" }} />
+                            : <XCircle className="h-3.5 w-3.5 shrink-0" style={{ color: "#F87171" }} />;
+                          return (
+                            <div key={i} className="flex items-center gap-2.5 text-xs"
+                              style={{ color: "var(--foreground-muted)" }}>
+                              {icon}
+                              <span className="text-foreground font-medium">{run.status}</span>
+                              <span style={{ color: "var(--foreground-dim)" }}>·</span>
+                              <span>{new Date(run.startedAt).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                              <span style={{ color: "var(--foreground-dim)" }}>·</span>
+                              <span>{run.durationSec}s</span>
+                              <span style={{ color: "var(--foreground-dim)" }}>·</span>
+                              <span className="capitalize" style={{ color: "var(--foreground-dim)" }}>{run.triggeredBy}</span>
+                              {run.failed > 0 && (
+                                <span style={{ color: "#F87171" }}>· {run.failed} failed</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </section>
 

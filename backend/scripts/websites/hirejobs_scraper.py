@@ -15,13 +15,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from scraper_utils import get_collection, generate_job_hash, bulk_upsert_jobs, upload_image_from_url, filter_jobs
-
-JOB_ROLES = [
-    "Software Engineer",
-    "Full Stack Engineer",
-    "Frontend Engineer",
-    "Backend Engineer",
-]
+from job_roles import JOB_ROLES
 
 # ── Chrome setup ──────────────────────────────────────────────────────────────
 options = webdriver.ChromeOptions()
