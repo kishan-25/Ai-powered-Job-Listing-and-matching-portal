@@ -6,6 +6,9 @@ import { getUserFromLocalStorage, removeUserFromLocalStorage } from "@/services/
 import { useEffect, useState } from "react";
 import { Menu, X, ChevronDown, LogOut } from "lucide-react";
 import { logout } from "@/redux/slices/authSlice";
+import toast from "react-hot-toast";
+
+const TOAST = { style: { background: "#252219", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" } };
 
 // Startup.jobs-style navbar:
 // - Transparent/dark bg
@@ -37,8 +40,9 @@ export default function Navbar() {
   const handleLogout = () => {
     removeUserFromLocalStorage();
     dispatch(logout());
-    router.push("/");
     setMobileOpen(false);
+    toast.success("Logged out successfully", { ...TOAST, duration: 2000 });
+    setTimeout(() => router.push("/"), 800);
   };
 
   const dashboardHref =

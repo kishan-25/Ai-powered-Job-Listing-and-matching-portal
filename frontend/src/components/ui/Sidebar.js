@@ -4,10 +4,13 @@ import { usePathname, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { getUserFromLocalStorage, removeUserFromLocalStorage } from "@/services/authService";
 import { logout } from "@/redux/slices/authSlice";
+import toast from "react-hot-toast";
 import {
   Briefcase, Bookmark, FileText, User,
   LayoutDashboard, PlusCircle, Users, LogOut,
 } from "lucide-react";
+
+const TOAST = { style: { background: "#252219", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" } };
 
 const NAV = {
   job_seeker: [
@@ -42,7 +45,9 @@ export function Sidebar() {
   const handleLogout = () => {
     removeUserFromLocalStorage();
     dispatch(logout());
-    router.push("/");
+    toast.success("Logged out successfully", { ...TOAST, duration: 2000 });
+    // Small delay so the toast renders before the page unmounts
+    setTimeout(() => router.push("/"), 800);
   };
 
   return (
