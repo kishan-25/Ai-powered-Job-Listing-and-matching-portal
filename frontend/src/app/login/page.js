@@ -5,103 +5,115 @@ import { loginStart, loginSuccess, loginFailure } from "@/redux/slices/authSlice
 import { loginUser } from "@/services/authService";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useToast, ToastContainer } from "@/components/Toast";
+import { Eye, EyeOff } from "lucide-react";
+import toast, { Toaster } from "react-hot-toast";
 
 export default function LoginPage() {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const dispatch = useDispatch();
-    const router = useRouter();
-    const { loading, error } = useSelector((state) => state.auth);
-    const { toasts, removeToast, showSuccess, showError } = useToast();
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw]     = useState(false);
+  const dispatch = useDispatch();
+  const router   = useRouter();
+  const { loading } = useSelector((s) => s.auth);
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        dispatch(loginStart());
-        try {
-            const data = await loginUser({ email, password });
-            if (data.success) {
-                dispatch(loginSuccess(data));
-                showSuccess("Login successful! Redirecting...");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    dispatch(loginStart());
+    try {
+      const data = await loginUser({ email, password });
+      if (data.success) {
+        dispatch(loginSuccess(data));
+        toast.success("Welcome back!");
+        const role = data.userRole || "job_seeker";
+        router.push(role === "admin" ? "/admin" : role === "recruiter" ? "/recruiter" : "/dashboard");
+      } else {
+        dispatch(loginFailure(data.message));
+        toast.error(data.message || "Login failed");
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Login failed";
+      dispatch(loginFailure(msg));
+      toast.error(msg);
+    }
+  };
 
-                // Role-based redirect
-                const userRole = data.userRole || 'job_seeker';
-                switch (userRole) {
-                    case 'admin':
-                        router.push("/admin");
-                        break;
-                    case 'recruiter':
-                        router.push("/recruiter");
-                        break;
-                    case 'job_seeker':
-                    default:
-                        router.push("/dashboard");
-                        break;
-                }
-            } else {
-                dispatch(loginFailure(data.message || "Login failed"));
-                showError(data.message || "Login failed. Please check your credentials.");
-            }
-        } catch (error) {
-            dispatch(loginFailure(error.response?.data?.message || "Login failed"));
-            showError(error.response?.data?.message || "Login failed. Please try again.");
-        }
-    };
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      <Toaster position="top-center" toastOptions={{ style: { background: "#252219", color: "#fff", border: "1px solid rgba(255,255,255,0.08)" } }} />
 
-    return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-            <div className="max-w-md w-full bg-white text-black rounded-xl shadow-lg p-8 border border-gray-200">
-                <div className="text-center mb-8">
-                    <div className="w-12 h-12 bg-gradient-to-br from-primary to-accent rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                        <span className="text-white font-bold text-xl">T</span>
-                    </div>
-                    <h1 className="text-3xl font-bold text-black mb-2">Welcome Back</h1>
-                    <p className="text-gray-600">Sign in to your TalentAlign account</p>
-                </div>
-            
+      {/* Top bar */}
+      <div className="flex items-center justify-between px-6 h-14 border-b border-border">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center">
+            <span className="text-white font-bold text-xs leading-none">T</span>
+          </div>
+          <span className="font-bold text-foreground text-sm">TalentAlign</span>
+        </Link>
+        <Link href="/register" className="text-sm text-foreground-muted hover:text-foreground transition-colors">
+          Create account →
+        </Link>
+      </div>
 
-            
-                <form onSubmit={handleLogin} className="space-y-6">
-                <div>
-                    <label className="block text-sm font-semibold text-black mb-2">Email Address</label>
-                    <input 
-                        type="email"
-                        placeholder="Enter your email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                        required
-                    />
-                </div>
-                
-                <div>
-                    <label className="block text-sm font-semibold text-black mb-2">Password</label>
-                    <input
-                        type="password"
-                        placeholder="Enter your password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-colors"
-                        required
-                    />
-                </div>
-                
-                <button 
-                    type="submit" 
-                    className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors duration-200 font-semibold"
-                    disabled={loading}
-                >
-                    {loading ? "Logging in..." : "Login"}
-                </button>
-                </form>
-            
-            <div className="mt-8 text-center">
-                <p className="text-gray-600">
-                    Don&apos;t have an account? <Link href="/register" className="text-black hover:text-gray-700 font-semibold">Create one here</Link>
-                </p>
+      {/* Form */}
+      <div className="flex-1 flex items-center justify-center px-4 py-16">
+        <div className="w-full max-w-sm">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Welcome back</h1>
+          <p className="text-foreground-muted text-sm mb-8">Sign in to your TalentAlign account</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-foreground-muted mb-1.5">Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="search-input"
+                required
+                autoComplete="email"
+              />
             </div>
+
+            <div>
+              <label className="block text-xs font-medium text-foreground-muted mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="search-input pr-10"
+                  required
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-dim hover:text-foreground transition-colors"
+                  aria-label={showPw ? "Hide password" : "Show password"}
+                >
+                  {showPw ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary w-full py-2.5 text-sm"
+            >
+              {loading ? "Signing in…" : "Sign in"}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-foreground-muted mt-6">
+            No account?{" "}
+            <Link href="/register" className="text-foreground hover:underline">
+              Create one free
+            </Link>
+          </p>
         </div>
-        <ToastContainer toasts={toasts} removeToast={removeToast} />
+      </div>
     </div>
-    );
+  );
 }

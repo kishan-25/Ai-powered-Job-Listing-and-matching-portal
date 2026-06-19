@@ -1,130 +1,35 @@
-import { motion } from "framer-motion";
-import { FileText, Target, Bot, TrendingUp } from "lucide-react";
+"use client";
+import { Upload, Target, FileText, Send } from "lucide-react";
 
-const HowItWorks = () => {
-  const steps = [
-    {
-      title: "Upload Resume",
-      description: "Upload your resume and let our AI analyze your skills and experience",
-      icon: <FileText size={36} />,
-      color: "bg-card text-foreground",
-    },
-    {
-      title: "Get Matched",
-      description: "Our AI finds jobs from multiple platforms and shows matching percentages",
-      icon: <Target size={36} />,
-      color: "bg-card text-foreground",
-    },
-    {
-      title: "Apply Smart",
-      description: "Generate personalized cover letters and track your application progress",
-      icon: <Bot size={36} />,
-      color: "bg-card text-foreground",
-    },
-  ];
+const STEPS = [
+  { n: "01", icon: Upload,   title: "Upload your resume",    desc: "We extract your skills automatically — no manual entry needed." },
+  { n: "02", icon: Target,   title: "Browse matched jobs",   desc: "Every listing gets a match % based on your skills vs the job requirements." },
+  { n: "03", icon: FileText, title: "Generate a cover letter", desc: "One click. Tailored to the role and company, sounds like you wrote it." },
+  { n: "04", icon: Send,     title: "Apply & track",         desc: "Apply directly. Track every application in your dashboard." },
+];
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
-  };
-
+export default function HowItWorks() {
   return (
-    <section
-      id="how-it-works"
-      className="py-20 bg-muted"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center">
-          <motion.h2
-            initial={{ opacity: 0, y: -20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-4xl md:text-5xl font-extrabold text-foreground"
-          >
-            How It Works
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 max-w-3xl mx-auto text-xl md:text-2xl font-medium text-muted-foreground"
-          >
-Transform your job search with AI-powered matching and personalized application assistance
-          </motion.p>
-        </div>
+    <section id="how-it-works" className="py-20 px-4 border-t border-border">
+      <div className="max-w-4xl mx-auto">
+        <p className="text-xs font-semibold text-foreground-dim uppercase tracking-widest mb-3">Process</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-12">How TalentAlign works</h2>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="mt-20 grid grid-cols-1 gap-y-12 gap-x-10 md:grid-cols-3"
-        >
-          {steps.map((step, index) => (
-            <motion.div
-              key={index}
-              variants={itemVariants}
-              className="relative"
-            >
-              <div className="flow-root rounded-lg px-6 pb-8">
-                <div className="-mt-6">
-                  {/* Step Number Badge */}
-                  <div className="absolute top-0 right-6 bg-primary text-white text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center shadow-lg">
-                    {index + 1}
-                  </div>
-
-                  <div className="relative">
-                    <span className={`inline-flex items-center justify-center rounded-md ${step.color} p-4 shadow-lg border-2 border-primary/20`}>
-                      {step.icon}
-                    </span>
-                  </div>
-                  <h3 className="mt-8 text-2xl font-bold tracking-tight text-foreground">
-                    {step.title}
-                  </h3>
-                  <p className="mt-5 text-lg leading-relaxed text-muted-foreground">
-                    {step.description}
-                  </p>
-                </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          {STEPS.map(({ n, icon: Icon, title, desc }) => (
+            <div key={n} className="flex gap-4">
+              <div className="shrink-0 h-9 w-9 rounded-lg bg-surface-2 border border-border flex items-center justify-center">
+                <Icon className="h-4 w-4 text-foreground-muted" />
               </div>
-            </motion.div>
+              <div>
+                <p className="text-[0.7rem] text-foreground-dim font-mono mb-1">{n}</p>
+                <p className="font-semibold text-foreground text-sm mb-1">{title}</p>
+                <p className="text-foreground-muted text-sm leading-relaxed">{desc}</p>
+              </div>
+            </div>
           ))}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.6 }}
-          className="mt-20 text-center"
-        >
-          <a
-            href="/register"
-            className="inline-flex items-center px-8 py-4 border border-transparent text-xl font-medium rounded-md shadow-sm bg-primary hover:bg-primary-hover text-primary-foreground transition-colors"
-          >
-            Get Started
-          </a>
-        </motion.div>
+        </div>
       </div>
     </section>
   );
-};
-
-export default HowItWorks;
+}

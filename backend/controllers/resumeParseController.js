@@ -2,18 +2,14 @@
 const ImageKit = require('imagekit');
 const cvHandler = require('../cvHandler');
 
-// Make sure environment variables are accessible
-// Debug logs to check environment variables are loaded
-console.log("ImageKit Config Check:");
-console.log("- PUBLIC_KEY:", process.env.IMAGEKIT_PUBLIC_KEY ? "Loaded" : "Missing");
-console.log("- PRIVATE_KEY:", process.env.IMAGEKIT_PRIVATE_KEY ? "Loaded" : "Missing");
-console.log("- URL_ENDPOINT:", process.env.IMAGEKIT_URL_ENDPOINT ? "Loaded" : "Missing");
+if (!process.env.IMAGEKIT_PUBLIC_KEY || !process.env.IMAGEKIT_PRIVATE_KEY || !process.env.IMAGEKIT_URL_ENDPOINT) {
+    throw new Error("Missing required ImageKit environment variables");
+}
 
-// Use string literals to ensure keys are properly defined
 const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY || "public_wBuKV8oOQOOZu3tuua14Y85MUiM=",
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY || "private_5VmVpl+MyYTlAzDwPTy9P5AJRi4=", 
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT || "https://ik.imagekit.io/ocxypkiqc"
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
 });
 
 const parseResume = async (req, res) => {
@@ -56,8 +52,7 @@ const parseResume = async (req, res) => {
 
         return res.status(200).json({
             success: true,
-            data: transformedData,
-            rawData: extractedData // Include raw data for debugging
+            data: transformedData
         });
 
     } catch (error) {

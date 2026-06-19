@@ -1,206 +1,108 @@
 "use client";
-import { motion } from "framer-motion";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
-import { getUserFromLocalStorage } from "@/services/authService";
+import { getUserFromLocalStorage, removeUserFromLocalStorage } from "@/services/authService";
 import { logout } from "@/redux/slices/authSlice";
-import { useRouter } from "next/navigation";
 import {
-  LayoutDashboard,
-  User,
-  FileText,
-  Briefcase,
-  PlusCircle,
-  Bookmark,
-  Users,
-  LogOut
+  Briefcase, Bookmark, FileText, User,
+  LayoutDashboard, PlusCircle, Users, LogOut,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-export function Sidebar({ className }) {
+const NAV = {
+  job_seeker: [
+    { href: "/dashboard",              label: "Browse Jobs",    icon: Briefcase },
+    { href: "/dashboard/saved",        label: "Saved Jobs",     icon: Bookmark  },
+    { href: "/dashboard/profile",      label: "Applications",   icon: FileText  },
+    { href: "/dashboard/profile/edit", label: "Profile",        icon: User      },
+  ],
+  recruiter: [
+    { href: "/recruiter",          label: "Dashboard",  icon: LayoutDashboard },
+    { href: "/recruiter/jobs/new", label: "Post a Job", icon: PlusCircle      },
+    { href: "/profile",            label: "Profile",    icon: User            },
+  ],
+  admin: [
+    { href: "/admin",       label: "Analytics",  icon: LayoutDashboard },
+    { href: "/admin/users", label: "Users",      icon: Users           },
+    { href: "/admin/jobs",  label: "Jobs",       icon: Briefcase       },
+  ],
+};
+
+export function Sidebar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
-  const router = useRouter();
-  const { user } = useSelector((state) => state.auth);
-  const userData = user || getUserFromLocalStorage();
-  const userRole = userData?.userRole || 'job_seeker';
+  const router   = useRouter();
+  const { user } = useSelector((s) => s.auth);
+  const userData  = user || getUserFromLocalStorage();
+  const role      = userData?.userRole || "job_seeker";
+  const navItems  = NAV[role] || NAV.job_seeker;
 
-  // Role-specific navigation items
-  const getNavItems = () => {
-    switch (userRole) {
-      case 'job_seeker':
-        return [
-          {
-            href: "/dashboard",
-            label: "Browse Jobs",
-            icon: Briefcase,
-            active: pathname === "/dashboard"
-          },
-          {
-            href: "/dashboard/profile",
-            label: "Applied Jobs",
-            icon: FileText,
-            active: pathname === "/dashboard/profile" || pathname === "/dashboard/profile/edit"
-          },
-          {
-            href: "/dashboard/saved",
-            label: "Saved Jobs",
-            icon: Bookmark,
-            active: pathname === "/dashboard/saved"
-          },
-          {
-            href: "/dashboard/profile/edit",
-            label: "Profile",
-            icon: User,
-            active: pathname === "/dashboard/profile/edit"
-          }
-        ];
-
-      case 'recruiter':
-        return [
-          {
-            href: "/recruiter",
-            label: "My Jobs",
-            icon: LayoutDashboard,
-            active: pathname === "/recruiter"
-          },
-          {
-            href: "/recruiter/jobs/new",
-            label: "Post Job",
-            icon: PlusCircle,
-            active: pathname === "/recruiter/jobs/new"
-          },
-          {
-            href: "/profile",
-            label: "Profile",
-            icon: User,
-            active: pathname === "/profile"
-          }
-        ];
-
-      case 'admin':
-        return [
-          {
-            href: "/admin",
-            label: "Dashboard",
-            icon: LayoutDashboard,
-            active: pathname === "/admin"
-          },
-          {
-            href: "/admin/users",
-            label: "Users",
-            icon: Users,
-            active: pathname.startsWith("/admin/users")
-          },
-          {
-            href: "/admin/jobs",
-            label: "Jobs",
-            icon: Briefcase,
-            active: pathname === "/admin/jobs"
-          }
-        ];
-
-      default:
-        return [];
-    }
-  };
+  const initial = (userData?.name || "U").charAt(0).toUpperCase();
 
   const handleLogout = () => {
+    removeUserFromLocalStorage();
     dispatch(logout());
-    router.push("/login");
+    router.push("/");
   };
 
-  const navItems = getNavItems();
-
   return (
-    <motion.aside
-      initial={{ x: -300 }}
-      animate={{ x: 0 }}
-      transition={{ duration: 0.3 }}
-      className={cn(
-        "fixed left-0 top-0 h-screen w-[280px] bg-card border-r border-border flex flex-col",
-        className
-      )}
-    >
-      {/* Header */}
-      <div className="flex items-center p-6 border-b border-border">
+    <aside className="fixed left-0 top-0 h-screen w-60 flex flex-col z-40" style={{ background: "var(--background)", borderRight: "1px solid rgba(255,255,255,0.07)" }}>
+
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-5 h-[53px] shrink-0" style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
         <Link href="/" className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-            <span className="text-white font-bold text-lg">T</span>
+          <div className="h-6 w-6 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
+            <span className="text-white font-bold text-xs leading-none">T</span>
           </div>
-          <span className="text-xl font-bold text-foreground">TalentAlign</span>
+          <span className="font-bold text-foreground text-sm tracking-tight">TalentAlign</span>
         </Link>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 space-y-2 overflow-y-auto p-4">
-        {navItems.map((item, index) => {
-          const Icon = item.icon;
+      {/* Nav */}
+      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
+        {navItems.map(({ href, label, icon: Icon }) => {
+          const active = pathname === href || (href !== "/" && pathname.startsWith(href + "/") && href !== "/dashboard");
           return (
-            <motion.div
-              key={item.href}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active
+                  ? "nav-item-active"
+                  : "text-foreground-muted hover:text-foreground hover:bg-surface"
+              }`}
             >
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-3 py-3 px-4 rounded-lg transition-all relative",
-                  item.active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5 flex-shrink-0" />
-                <span className="font-medium">{item.label}</span>
-
-                {/* Active indicator */}
-                {item.active && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute right-2 h-2 w-2 rounded-full bg-white"
-                  />
-                )}
-              </Link>
-            </motion.div>
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              {label}
+            </Link>
           );
         })}
       </nav>
 
-      {/* User Profile Section */}
-      <div className="border-t border-border space-y-2 p-4">
+      {/* User + Logout */}
+      <div className="border-t border-border p-3 space-y-1 flex-shrink-0">
         {/* Logout */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 py-3 px-4 rounded-lg text-muted-foreground hover:bg-error/10 hover:text-error transition-all"
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-foreground-muted hover:text-error hover:bg-surface transition-colors"
         >
-          <LogOut className="h-5 w-5 flex-shrink-0" />
-          <span className="font-medium">Logout</span>
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          Logout
         </button>
 
-        {/* User Info */}
+        {/* User chip */}
         {userData && (
-          <div className="px-4 py-3 mt-2 bg-muted rounded-lg">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-semibold text-sm">
-                  {userData.name?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {userData.name || 'User'}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {userData.email}
-                </p>
-              </div>
+          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface mt-1">
+            <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <span className="text-white font-semibold text-xs">{initial}</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-foreground truncate">{userData.name || "User"}</p>
+              <p className="text-[0.7rem] text-foreground-muted truncate">{userData.email}</p>
             </div>
           </div>
         )}
       </div>
-    </motion.aside>
+    </aside>
   );
 }

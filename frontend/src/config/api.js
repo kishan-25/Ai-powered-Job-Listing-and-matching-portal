@@ -1,11 +1,11 @@
-// API Configuration
-// Switch between development and production URLs
+// API Configuration — reads from NEXT_PUBLIC_API_URL env var.
+// Set it in .env.local for local dev, or in the hosting platform for production.
 
-const isDevelopment = process.env.NODE_ENV === 'development';
-
-export const API_BASE_URL = isDevelopment 
-  ? 'http://localhost:5000'
-  : 'https://talentalign-backend.onrender.com';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? 'https://talentalign-backend.onrender.com'
+    : 'http://localhost:5000');
 
 export const API_ENDPOINTS = {
   auth: `${API_BASE_URL}/api/v1/auth`,

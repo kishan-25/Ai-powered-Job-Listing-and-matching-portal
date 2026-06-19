@@ -1,148 +1,238 @@
 @import "tailwindcss";
 
-:root {
-  /* Base colors - Dark Mode with Professional Blue Theme (DEFAULT) */
-  --background: #0F172A;
-  --foreground: #F1F5F9;
-  --card: #1E293B;
-  --card-foreground: #F1F5F9;
+/* ─────────────────────────────────────────────────────────────────────────────
+   TALENTALIGN DESIGN TOKENS
+   Inspired by startup.jobs — warm dark charcoal, single blue accent, no gradients
+   ───────────────────────────────────────────────────────────────────────────── */
 
-  /* Brand colors - Professional Blue */
-  --primary: #0A66C2;
-  --primary-hover: #0EA5E9;
+:root {
+  /* ── Surfaces ── */
+  --background: #1E1B14;          /* warm dark charcoal — the signature startup.jobs bg */
+  --surface:    #252219;          /* slightly raised surfaces (rows on hover, cards) */
+  --surface-2:  #2C2820;          /* more elevated (spotlight cards, modals) */
+
+  /* ── Text ── */
+  --foreground:       #FFFFFF;
+  --foreground-muted: #9CA3AF;    /* secondary text — company name, location, date */
+  --foreground-dim:   #6B7280;    /* tertiary — timestamps, labels */
+
+  /* ── Brand accent — exactly startup.jobs blue ── */
+  --primary:          #0D51FF;
+  --primary-hover:    #0A3FCC;
   --primary-foreground: #FFFFFF;
 
-  /* Accent colors - Sky Blue */
-  --accent: #0EA5E9;
-  --accent-hover: #38BDF8;
-  --accent-foreground: #FFFFFF;
-
-  /* Secondary accent - Light Blue for highlights */
-  --secondary: #38BDF8;
-  --secondary-hover: #0EA5E9;
-  --secondary-foreground: #FFFFFF;
-
-  /* Semantic colors */
+  /* ── Semantic ── */
   --success: #10B981;
   --warning: #F59E0B;
-  --error: #DC2626;
-  --info: #0EA5E9;
+  --error:   #EF4444;
 
-  /* Neutral colors - Dark Mode */
-  --muted: #1E293B;
-  --muted-foreground: #94A3B8;
-  --border: #334155;
-  --input: #334155;
+  /* ── Borders ── */
+  --border:       rgba(255,255,255,0.08);
+  --border-focus: rgba(13,81,255,0.6);
 
-  /* Dark shades for contrast */
-  --dark: #0A0F1E;
-  --dark-foreground: #FFFFFF;
+  /* ── Match strength colors ── */
+  --match-high:   #10B981;   /* 80%+ */
+  --match-mid:    #F59E0B;   /* 60–79% */
+  --match-low:    #6B7280;   /* <60% */
 
-  /* Shadows - Professional (adjusted for dark mode) */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.3);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.4);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.7), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-
-  /* Gradients - Professional Blue */
-  --gradient-primary: linear-gradient(135deg, #0A66C2, #0EA5E9);
-  --gradient-accent: linear-gradient(135deg, #0EA5E9, #38BDF8);
-  --gradient-dark: linear-gradient(135deg, #1E40AF, #0A66C2);
-  --gradient-success: linear-gradient(135deg, #10B981, #059669);
-}
-
-/* Light Mode Override */
-.light {
-  /* Base colors - Light Mode */
-  --background: #F8FAFC;
-  --foreground: #0F172A;
-  --card: #FFFFFF;
-  --card-foreground: #0F172A;
-
-  /* Neutral colors - Light Mode with subtle blue tint */
-  --muted: #EFF6FF;
-  --muted-foreground: #64748B;
-  --border: #DBEAFE;
-  --input: #E0F2FE;
-
-  /* Shadows - Light Mode */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-  --shadow-md: 0 4px 6px -1px rgb(10 102 194 / 0.1), 0 2px 4px -2px rgb(10 102 194 / 0.05);
-  --shadow-lg: 0 10px 15px -3px rgb(10 102 194 / 0.1), 0 4px 6px -4px rgb(10 102 194 / 0.05);
-  --shadow-xl: 0 20px 25px -5px rgb(10 102 194 / 0.1), 0 8px 10px -6px rgb(10 102 194 / 0.05);
-}
-
-/* Hero Section - Theme Aware */
-.hero-gradient {
-  /* Dark Mode (default): Dark gradient background */
-  background: linear-gradient(135deg, #1E293B 0%, #0F172A 50%, #1E293B 100%) !important;
-}
-
-.light .hero-gradient {
-  /* Light Mode: Blue gradient background */
-  background: linear-gradient(135deg, #0A66C2 0%, #0EA5E9 50%, #38BDF8 100%) !important;
+  /* ── Legacy aliases (keeps existing components from breaking) ── */
+  --card:              var(--surface-2);
+  --card-foreground:   var(--foreground);
+  --muted:             var(--surface);
+  --muted-foreground:  var(--foreground-muted);
+  --input:             var(--surface-2);
+  --accent:            var(--primary);
+  --accent-foreground: var(--primary-foreground);
+  --dark:              var(--background);
+  --dark-foreground:   var(--foreground);
+  --info:              var(--primary);
 }
 
 @theme inline {
-  /* Colors */
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-primary: var(--primary);
-  --color-primary-hover: var(--primary-hover);
+  --color-background:        var(--background);
+  --color-surface:           var(--surface);
+  --color-surface-2:         var(--surface-2);
+  --color-foreground:        var(--foreground);
+  --color-foreground-muted:  var(--foreground-muted);
+  --color-foreground-dim:    var(--foreground-dim);
+  --color-primary:           var(--primary);
+  --color-primary-hover:     var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
-  --color-accent: var(--accent);
-  --color-accent-hover: var(--accent-hover);
+  --color-success:           var(--success);
+  --color-warning:           var(--warning);
+  --color-error:             var(--error);
+  --color-border:            var(--border);
+  --color-border-focus:      var(--border-focus);
+  --color-match-high:        var(--match-high);
+  --color-match-mid:         var(--match-mid);
+  --color-match-low:         var(--match-low);
+
+  /* Legacy aliases */
+  --color-card:              var(--card);
+  --color-card-foreground:   var(--card-foreground);
+  --color-muted:             var(--muted);
+  --color-muted-foreground:  var(--muted-foreground);
+  --color-input:             var(--input);
+  --color-accent:            var(--accent);
   --color-accent-foreground: var(--accent-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-hover: var(--secondary-hover);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-error: var(--error);
-  --color-info: var(--info);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-dark: var(--dark);
-  --color-dark-foreground: var(--dark-foreground);
+  --color-dark:              var(--dark);
+  --color-dark-foreground:   var(--dark-foreground);
+  --color-info:              var(--info);
+  --color-secondary:         var(--surface);
+  --color-secondary-foreground: var(--foreground);
 
-  /* Fonts */
-  --font-sans: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'JetBrains Mono', monospace;
 
-  /* Border radius */
-  --radius-sm: 0.375rem;
-  --radius: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  --radius-sm: 0.25rem;   /* 4px  */
+  --radius:    0.375rem;  /* 6px  */
+  --radius-md: 0.5rem;    /* 8px  */
+  --radius-lg: 0.75rem;   /* 12px */
+  --radius-xl: 1rem;      /* 16px */
 }
 
-body, html {
-  background: var(--background) !important;
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  min-height: 100%;
-}
+/* ── Base ──────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
 
-/* Ensure all page wrappers use the dark background */
-#__next, .app-container, main {
+html {
   background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
   min-height: 100vh;
 }
 
-.gradient-header {
-  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
-  color: white;
+#__next, main { background: var(--background); }
+
+/* ── Scrollbar ─────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--background); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Focus ring ────────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
-.hero-section {
-  background: linear-gradient(135deg, var(--primary-gradient-start), var(--primary-gradient-end));
-  color: white;
-  padding: 3rem 1rem;
+/* ── Job row hover ─────────────────────────────────────────────────────────── */
+.job-row:hover { background: var(--surface); }
+
+/* ── Work mode tags (inline, no bg) ───────────────────────────────────────── */
+.work-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--foreground-muted);
+  font-weight: 500;
 }
+
+/* ── Match badge ───────────────────────────────────────────────────────────── */
+.match-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+.match-high { color: var(--match-high); background: rgba(16,185,129,0.12); }
+.match-mid  { color: var(--match-mid);  background: rgba(245,158,11,0.12); }
+.match-low  { color: var(--match-low);  background: rgba(107,114,128,0.12); }
+
+/* ── Spotlight company card ────────────────────────────────────────────────── */
+.spotlight-card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  transition: border-color 0.15s;
+  cursor: pointer;
+}
+.spotlight-card:hover { border-color: rgba(255,255,255,0.18); }
+
+/* ── Search / filter inputs ─────────────────────────────────────────────────── */
+.search-input {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  border-radius: var(--radius-md);
+  padding: 0.625rem 1rem;
+  font-size: 0.9rem;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+.search-input::placeholder { color: var(--foreground-dim); }
+.search-input:focus { border-color: var(--border-focus); outline: none; }
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.35rem 0.875rem;
+  font-size: 0.8rem;
+  color: var(--foreground-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.filter-pill:hover  { border-color: rgba(255,255,255,0.18); color: var(--foreground); }
+.filter-pill.active { border-color: var(--primary); color: var(--primary); }
+
+/* ── Buttons ───────────────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: var(--primary-hover); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--foreground-muted);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.4rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-outline:hover { border-color: rgba(255,255,255,0.22); color: var(--foreground); }
+
+/* ── Section divider ───────────────────────────────────────────────────────── */
+.section-divider { border-top: 1px solid var(--border); }
+
+/* ── Loading spinner ───────────────────────────────────────────────────────── */
+.spinner {
+  border: 2px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Sidebar active nav item ───────────────────────────────────────────────── */
+.nav-item-active {
+  background: rgba(13,81,255,0.15);
+  color: var(--primary);
+}
+.nav-item-active svg { color: var(--primary); }

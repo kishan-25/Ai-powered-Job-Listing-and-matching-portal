@@ -1,30 +1,24 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Providers from "@/redux/Provider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
 });
 
 export const metadata = {
-  title: "TalentAlign",
-  description: "AI powered job application platform",
-  icons: {
-    icon: "/favicon.png"
-  },
+  title: "TalentAlign — AI Job Matching",
+  description: "AI-powered job matching. Find your next role at the fastest growing startups.",
+  icons: { icon: "/favicon.png" },
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Providers>{children}</Providers> 
+    <html lang="en" className={inter.variable}>
+      <body className="antialiased">
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

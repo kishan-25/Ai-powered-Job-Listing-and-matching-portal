@@ -1,148 +1,59 @@
-import { motion } from "framer-motion";
-import { TrendingUp, Users, Zap, Target, Award, Briefcase } from "lucide-react";
+"use client";
+import { useState } from "react";
+import axios from "axios";
+import { API_BASE_URL } from "@/config/api";
 
-const PlatformStats = () => {
-  const stats = [
-    {
-      icon: <Users size={32} />,
-      number: "Demo",
-      label: "Personal Project",
-      description: "Built for learning & portfolio"
-    },
-    {
-      icon: <Briefcase size={32} />,
-      number: "500+",
-      label: "Job Listings",
-      description: "Scraped from multiple sources"
-    },
-    {
-      icon: <Target size={32} />,
-      number: "AI-Powered",
-      label: "Smart Matching",
-      description: "Skills-based job matching"
-    },
-    {
-      icon: <Award size={32} />,
-      number: "Auto",
-      label: "Cover Letters",
-      description: "AI-generated personalized letters"
+export default function ContactForm() {
+  const [form, setForm] = useState({ name: "", email: "", subject: "", inquiryType: "General", message: "" });
+  const [status, setStatus] = useState(null); // "sending" | "ok" | "error"
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus("sending");
+    try {
+      await axios.post(`${API_BASE_URL}/api/v1/contact`, form);
+      setStatus("ok");
+      setForm({ name: "", email: "", subject: "", inquiryType: "General", message: "" });
+    } catch {
+      setStatus("error");
     }
-  ];
+  };
 
-  const features = [
-    {
-      icon: <Zap size={24} />,
-      title: "AI-Powered Matching",
-      description: "Our advanced AI analyzes your skills and matches you with the perfect job opportunities."
-    },
-    {
-      icon: <TrendingUp size={24} />,
-      title: "Dynamic Cover Letters",
-      description: "Generate personalized cover letters instantly with our AI assistant for each application."
-    },
-    {
-      icon: <Target size={24} />,
-      title: "Skill-Based Scoring",
-      description: "See your compatibility percentage with each job posting based on your skills and experience."
-    }
-  ];
-  
-
-  
   return (
-    <section
-      id="platform-stats"
-      className="py-20 bg-muted"
-    >
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
-        >
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl text-foreground">
-            TalentAlign Features
-          </h2>
-          <p className="mt-4 text-xl text-muted-foreground">
-            A personal project showcasing AI-powered job matching and application assistance capabilities.
-          </p>
-        </motion.div>
+    <section id="contact" className="py-20 px-4 border-t border-border">
+      <div className="max-w-4xl mx-auto">
+        <p className="text-xs font-semibold text-foreground-dim uppercase tracking-widest mb-3">Contact</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-3">Get in touch</h2>
+        <p className="text-foreground-muted text-sm mb-10">Have a question or feedback? We read every message.</p>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="text-center p-6 rounded-lg bg-card border border-border shadow-lg hover:shadow-xl transition-shadow duration-300"
-            >
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary to-accent text-white mb-4">
-                {stat.icon}
-              </div>
-              <h3 className="text-3xl font-bold text-foreground mb-2">
-                {stat.number}
-              </h3>
-              <p className="text-lg font-medium text-card-foreground mb-1">
-                {stat.label}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {stat.description}
-              </p>
-            </motion.div>
-          ))}
-        </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+          <input className="search-input" placeholder="Your name" value={form.name} onChange={set("name")} required />
+          <input className="search-input" type="email" placeholder="Email address" value={form.email} onChange={set("email")} required />
+          <input className="search-input sm:col-span-2" placeholder="Subject" value={form.subject} onChange={set("subject")} required />
+          <select className="search-input" value={form.inquiryType} onChange={set("inquiryType")}>
+            {["General", "Bug Report", "Feature Request", "Partnership"].map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
+          <textarea
+            className="search-input sm:col-span-2 resize-none h-28"
+            placeholder="Your message"
+            value={form.message}
+            onChange={set("message")}
+            required
+          />
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {features.map((feature, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="p-6 rounded-lg bg-card border border-border shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-            >
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-accent text-white mb-4">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl font-bold text-foreground mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-muted-foreground">
-                {feature.description}
-              </p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Call to Action */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="text-center mt-16"
-        >
-          <motion.a
-            href="/register"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center px-8 py-4 border border-transparent text-lg font-medium rounded-md text-white bg-primary hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors duration-200"
-          >
-            <Target size={20} className="mr-2" />
-            Start Your Career Journey
-          </motion.a>
-        </motion.div>
+          <div className="sm:col-span-2 flex items-center gap-4">
+            <button type="submit" disabled={status === "sending"} className="btn-primary">
+              {status === "sending" ? "Sending…" : "Send message"}
+            </button>
+            {status === "ok" && <span className="text-success text-sm">Message sent ✓</span>}
+            {status === "error" && <span className="text-error text-sm">Failed — please try again.</span>}
+          </div>
+        </form>
       </div>
     </section>
   );
-};
-
-export default PlatformStats;
+}

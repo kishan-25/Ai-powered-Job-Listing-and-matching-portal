@@ -204,8 +204,9 @@ const getRecruiterPostedJobs = async (req, res) => {
 // Get all jobs from all sources (for job seeker dashboard)
 const getAllJobs = async (req, res) => {
     try {
-        const { page = 1, limit = 20, search, location, experience, jobType, workMode, source } = req.query;
-        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const { page = 1, search, location, experience, jobType, workMode, source } = req.query;
+        const limit = Math.min(parseInt(req.query.limit) || 20, 50); // hard cap at 50 per page
+        const skip = (parseInt(page) - 1) * limit;
 
         let allJobs = [];
 
@@ -213,6 +214,8 @@ const getAllJobs = async (req, res) => {
         const sources = source ? [source] : ['telegram', 'timesjob', 'recruiter'];
 
         // Fetch from selected sources
+        const PER_SOURCE_LIMIT = 500; // prevent loading entire collection into memory
+
         if (sources.includes('telegram')) {
             const telegramQuery = {};
             if (search) {
@@ -227,6 +230,8 @@ const getAllJobs = async (req, res) => {
 
             const telegramJobs = await mongoose.connection.db.collection("telegram")
                 .find(telegramQuery)
+                .sort({ _id: -1 })
+                .limit(PER_SOURCE_LIMIT)
                 .toArray();
             allJobs = allJobs.concat(telegramJobs.map(j => ({ ...j, source: 'telegram' })));
         }
@@ -246,6 +251,8 @@ const getAllJobs = async (req, res) => {
 
             const timesJobs = await mongoose.connection.db.collection("timesjob")
                 .find(timesQuery)
+                .sort({ _id: -1 })
+                .limit(PER_SOURCE_LIMIT)
                 .toArray();
             allJobs = allJobs.concat(timesJobs.map(j => ({ ...j, source: 'timesjob' })));
         }
@@ -264,7 +271,7 @@ const getAllJobs = async (req, res) => {
             if (jobType && jobType !== 'all') recruiterQuery.jobType = jobType;
             if (workMode && workMode !== 'all') recruiterQuery.workMode = workMode;
 
-            const recruiterJobs = await Job.find(recruiterQuery).lean();
+            const recruiterJobs = await Job.find(recruiterQuery).limit(PER_SOURCE_LIMIT).lean();
             allJobs = allJobs.concat(recruiterJobs);
         }
 

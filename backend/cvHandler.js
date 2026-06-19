@@ -33,13 +33,13 @@ async function cvHandler(fileUrl) {
 async function processWithGemini(fileUrl, regexData = null) {
     console.log("🤖 Processing with Gemini AI...");
     
-    const GEMINI_API_KEY = process.env.GEMINI_API_KEY || require("./env").GEMINI_API_KEY;
+    const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
         console.log("❌ Gemini API key not configured, using regex data only");
         if (regexData) {
             return regexData;
         }
-        throw new Error("❌ Gemini API key is not configured and regex extraction failed");
+        throw new Error("Gemini API key is not configured and regex extraction failed");
     }
 
     try {

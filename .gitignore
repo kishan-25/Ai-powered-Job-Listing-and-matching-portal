@@ -22,11 +22,16 @@ env/
 *.session-journal
 telethon.config
 tempCodeRunnerFile.py
+
+# Telegram scraped images — never commit local images; CDN URLs are in MongoDB
 backend/scripts/telegram/images/
+backend/scripts/telegram/*.jpg
+backend/scripts/telegram/*.png
 
 # Scraper debug files
 *_debug_*.html
 backend/scripts/websites/*_debug_*.html
+instahyre_debug_*.html
 
 # Next.js
 frontend/.next/

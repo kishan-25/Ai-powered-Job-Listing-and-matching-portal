@@ -1,119 +1,32 @@
-import { motion } from "framer-motion";
-import { Target, Users, TrendingUp, Zap } from "lucide-react";
+"use client";
+import { Zap, Globe, Brain, ShieldCheck } from "lucide-react";
 
-const WhyChooseUs = () => {
-  const features = [
-    {
-      name: "Smart Skill Matching",
-      description: "Our AI analyzes your skills and matches you with jobs showing compatibility percentages",
-      icon: <Target size={36} />,
-    },
-    {
-      name: "Centralized Job Search",
-      description: "Access jobs from multiple platforms including Telegram channels and web portals in one place",
-      icon: <Users size={36} />,
-    },
-    {
-      name: "Progress Tracking",
-      description: "Monitor your application status and career progress with personalized dashboard analytics",
-      icon: <TrendingUp size={36} />,
-    },
-    {
-      name: "AI Cover Letters",
-      description: "Generate dynamic, personalized cover letters tailored to each job application instantly",
-      icon: <Zap size={36} />,
-    },
-  ];
+const FEATURES = [
+  { icon: Brain,       title: "AI-powered matching",   desc: "Skill-based compatibility scores for every single job listing." },
+  { icon: Globe,       title: "Aggregated sources",    desc: "Telegram channels, HireJobs, TimesJobs — one clean feed." },
+  { icon: Zap,         title: "Instant cover letters", desc: "Gemini AI writes them. You review, edit, send." },
+  { icon: ShieldCheck, title: "Privacy first",         desc: "Your resume data stays yours. No selling, no sharing." },
+];
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.5,
-      },
-    },
-  };
-
+export default function WhyChooseUs() {
   return (
-    <section
-      id="why-choose-us"
-      className="py-24 bg-background"
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="lg:text-center">
-          <motion.h2
-            initial={{ opacity: 0, y: -20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-xl md:text-2xl font-bold text-foreground"
-          >
-            Why Choose Us
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-foreground"
-          >
-Transform your job search with AI
-          </motion.p>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-6 max-w-3xl mx-auto text-xl md:text-2xl font-medium text-muted-foreground"
-          >
-Discover why thousands of job seekers trust TalentAlign&apos;s AI-powered platform to accelerate their careers
-          </motion.p>
-        </div>
+    <section id="why-choose-us" className="py-20 px-4 border-t border-border">
+      <div className="max-w-4xl mx-auto">
+        <p className="text-xs font-semibold text-foreground-dim uppercase tracking-widest mb-3">Why us</p>
+        <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-12">Built differently</h2>
 
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="mt-20"
-        >
-          <div className="grid grid-cols-1 gap-10 md:grid-cols-2">
-            {features.map((feature, index) => (
-              <motion.div
-                key={index}
-                variants={itemVariants}
-                className="flex bg-card p-8 rounded-lg shadow-lg border border-border"
-              >
-                <div className="flex-shrink-0 flex items-center justify-center h-16 w-16 rounded-md bg-muted text-foreground">
-                  {feature.icon}
-                </div>
-                <div className="ml-5">
-                  <h3 className="text-xl md:text-2xl font-bold text-foreground">
-                    {feature.name}
-                  </h3>
-                  <p className="mt-3 text-lg leading-relaxed text-muted-foreground">
-                    {feature.description}
-                  </p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {FEATURES.map(({ icon: Icon, title, desc }) => (
+            <div key={title} className="spotlight-card">
+              <div className="h-8 w-8 rounded-lg bg-primary/15 flex items-center justify-center mb-3">
+                <Icon className="h-4 w-4 text-primary" />
+              </div>
+              <p className="font-semibold text-foreground text-sm mb-1.5">{title}</p>
+              <p className="text-foreground-muted text-xs leading-relaxed">{desc}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   );
-};
-
-export default WhyChooseUs;
+}

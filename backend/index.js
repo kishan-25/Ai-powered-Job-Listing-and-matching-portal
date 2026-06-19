@@ -1,9 +1,9 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const path = require("path");
 const multer = require('multer');
 const ImageKit = require('imagekit');
+const rateLimit = require("express-rate-limit");
 const connectDB = require("./config/db");
 
 const applicationRoutes = require('./routes/applicationRoutes');
@@ -15,16 +15,55 @@ const contactRoutes = require('./routes/contactRoutes');
 const recruiterRoutes = require('./routes/recruiterRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
-const { exec } = require("child_process");
 const generateCoverLetterRoute = require("./routes/generateCoverLetter");
+const { protect } = require("./middlewares/authMiddleware");
 
 const app = express();
+
+// Rate limiting
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Too many requests, please try again later." }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: "Too many login attempts, please try again in 15 minutes." }
+});
+
+app.use(globalLimiter);
+
+const ALLOWED_ORIGINS = [
+    // localhost (dev)
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+    "http://10.91.49.94:3001",
+    // production
+    "https://talentalign.vercel.app",
+];
+
 app.use(cors({
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "https://talentalign.vercel.app"], // Add your frontend URLs
+    origin: (origin, callback) => {
+        // Allow requests with no origin (curl, Postman, mobile apps)
+        if (!origin) return callback(null, true);
+        // Allow any LAN IP on port 3000 or 3001 (useful for mobile testing on same network)
+        if (/^http:\/\/10\.\d+\.\d+\.\d+:(3000|3001)$/.test(origin)) return callback(null, true);
+        if (/^http:\/\/192\.168\.\d+\.\d+:(3000|3001)$/.test(origin)) return callback(null, true);
+        if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+        callback(new Error(`CORS: origin ${origin} not allowed`));
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true
-  }));
+    credentials: true,
+}));
 app.use(express.json());
 
 app.get("/", (req,res) => {
@@ -54,7 +93,7 @@ const imagekit = new ImageKit({
     urlEndpoint: IMAGEKIT_URL_ENDPOINT
 });
 
-// File upload endpoint
+// File upload endpoint — no auth required: used during registration before the user has a token
 app.post('/upload-cv', upload.single('file'), async (req, res) => {
     if (!req.file) {
         return res.status(400).json({ message: 'No file uploaded' });
@@ -96,12 +135,10 @@ app.post('/process-cv', async(req, res) => {
 });
 
 
-// ✅ Add these middlewares
-
 app.use(express.urlencoded({ extended: true }));
 
 //Routes
-app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/auth", authLimiter, authRoutes);
 app.use('/api/v1/jobs', jobRoutes);
 app.use("/api/v1/cover-letter", generateCoverLetterRoute);
 app.use('/api/v1/resume', resumeRoutes);
@@ -111,143 +148,11 @@ app.use('/api/v1/recruiter', recruiterRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/users', userRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, ()=> console.log(`Server is runnig on PORT : ${PORT}`));
+// Global error handler — must be after all routes
+const errorHandler = require('./middlewares/errorHandler');
+app.use(errorHandler);
 
-//Database Connection
-// Test function
-// const testDBWrite = async () => {
-//     try {
-//       const testJob = new Job({
-//         title: "Test Job",
-//         company: "Test Company",
-//         source: "Manual Test",
-//         text: "This is a test job posting"
-//       });
-      
-//       const saved = await testJob.save();
-//       console.log("Test job saved successfully:", saved);
-//     } catch (err) {
-//       console.error("Error saving test job:", err);
-//     }
-//   };
-  
-//   // Call after database connection
-//   connectDB().then(() => {
-//     testDBWrite();
-//   });
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server is running on PORT: ${PORT}`));
 
 connectDB();
-
-//   const runScrapers = async () => {
-//         console.log("🔄 Running dummy...");
-        
-//         const scriptsDir = path.join(__dirname, "scripts");
-       
-//         const dummyPath = path.join(scriptsDir, "dummyScript.py");
-
-//   try {
-//             console.log("📊 Starting python script...");
-//             await new Promise((resolve, reject) => {
-//                 exec(`python "${dummyPath}"`, (error, stdout, stderr) => {
-//                     if (error) {
-//                         console.error(`❌ dummy Error: ${error.message}`);
-//                         reject(error);
-//                         return;
-//                     }
-//                     if (stderr) console.error(`⚠ Website Scraper Stderr: ${stderr}`);
-//                     console.log(`✅ dummy Output: ${stdout}`);
-//                     resolve();
-//                 });
-//             });
-            
-//         } catch (err) {
-//             console.error("❌ Error running scrapers:", err);
-//         }
-//   }
-
-//   runScrapers();
-
-
-//scrapper run
-const runScrapers = async () => {
-    console.log("🔄 Running scrapers...");
-    
-    const scriptsDir = path.join(__dirname, "scripts");
-    const telegramScraperPath = path.join(scriptsDir, "telegram_scraper.py");
-    const websiteScraperPath = path.join(scriptsDir, "website_scraper.py");
-
-    // Run Website Scraper first
-    try {
-        console.log("📊 Starting Website Scraper...");
-        await new Promise((resolve, reject) => {
-            exec(`python "${websiteScraperPath}"`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`❌ Website Scraper Error: ${error.message}`);
-                    reject(error);
-                    return;
-                }
-                if (stderr) console.error(`⚠ Website Scraper Stderr: ${stderr}`);
-                console.log(`✅ Website Scraper Output: ${stdout}`);
-                resolve();
-            });
-        });
-        
-        // Then run Telegram Scraper
-        console.log("📱 Starting Telegram Scraper...");
-        await new Promise((resolve, reject) => {
-            exec(`python "${telegramScraperPath}"`, (error, stdout, stderr) => {
-                if (error) {
-                    console.error(`❌ Telegram Scraper Error: ${error.message}`);
-                    reject(error);
-                    return;
-                }
-                if (stderr) console.error(`⚠ Telegram Scraper Stderr: ${stderr}`);
-                console.log(`✅ Telegram Scraper Output: ${stdout}`);
-                resolve();
-            });
-        });
-        
-        console.log("✅ All scrapers completed successfully!");
-    } catch (err) {
-        console.error("❌ Error running scrapers:", err);
-    }
-};
-
-// const telegramScrapers = async () => {
-//     console.log("🔄 Running scrapers...");
-    
-//     const scriptsDir = path.join(__dirname, "scripts");
-//     const telegramScraperPath = path.join(scriptsDir, "telegram_scraper.py");
-
-//     // Run Website Scraper first
-//     try {
-        
-//         // Then run Telegram Scraper
-//         console.log("📱 Starting Telegram Scraper...");
-//         await new Promise((resolve, reject) => {
-//             exec(`python "${telegramScraperPath}"`, (error, stdout, stderr) => {
-//                 if (error) {
-//                     console.error(`❌ Telegram Scraper Error: ${error.message}`);
-//                     reject(error);
-//                     return;
-//                 }
-//                 if (stderr) console.error(`⚠ Telegram Scraper Stderr: ${stderr}`);
-//                 console.log(`✅ Telegram Scraper Output: ${stdout}`);
-//                 resolve();
-//             });
-//         });
-        
-//         console.log("✅ All scrapers completed successfully!");
-//     } catch (err) {
-//         console.error("❌ Error running scrapers:", err);
-//     }
-// };
-
-// // Run scrapers immediately on startup
-// runScrapers();
-
-// telegramScrapers();
-
-// // Run scrapers every 24 hours (86400000 ms)
-// setInterval(runScrapers, 24 * 60 * 60 * 1000);

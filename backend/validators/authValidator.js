@@ -38,8 +38,8 @@ const validateRegister = [
 
   body('userRole')
     .optional()
-    .isIn(['job_seeker', 'recruiter', 'admin'])
-    .withMessage('Invalid user role'),
+    .isIn(['job_seeker', 'recruiter'])
+    .withMessage('Invalid user role. Must be job_seeker or recruiter'),
 
   handleValidationErrors
 ];

@@ -30,11 +30,11 @@ const registerUser = async (req, res) => {
         });
     }
 
-    // Validate userRole if provided
-    if (userRole && !['job_seeker', 'recruiter', 'admin'].includes(userRole)) {
+    // Only job_seeker and recruiter can self-register; admin role is assigned by existing admins only
+    if (userRole && !['job_seeker', 'recruiter'].includes(userRole)) {
         return res.status(400).json({
             success: false,
-            message: "Invalid user role. Must be 'job_seeker', 'recruiter', or 'admin'"
+            message: "Invalid user role. Must be 'job_seeker' or 'recruiter'"
         });
     }
 
@@ -83,10 +83,10 @@ const registerUser = async (req, res) => {
             });
         }
     } catch (error) {
+        console.error("Registration error:", error);
         res.status(500).json({
             success: false,
-            message: "Server error during registration",
-            error: error.message
+            message: "Server error during registration"
         });
     }
 };
@@ -130,10 +130,10 @@ const loginUser = async (req, res) => {
             });
         }
     } catch (error) {
+        console.error("Login error:", error);
         res.status(500).json({
             success: false,
-            message: "Server error during login",
-            error: error.message
+            message: "Server error during login"
         });
     }
 };
@@ -154,10 +154,10 @@ const getUserProfile = async (req, res) => {
             });
         }
     } catch (error) {
+        console.error("Get profile error:", error);
         res.status(500).json({
             success: false,
-            message: "Server error retrieving profile",
-            error: error.message
+            message: "Server error retrieving profile"
         });
     }
 };
@@ -168,20 +168,31 @@ const updateUserProfile = async (req, res) => {
         const user = await User.findById(req.user.id);
 
         if (user) {
-            user.name = req.body.name || user.name;
-            user.skills = req.body.skills || user.skills;
-            user.experience = req.body.experience || user.experience;
-            user.jobTitle = req.body.jobTitle || user.jobTitle;
-            user.education = req.body.education || user.education;
-            user.location = req.body.location || user.location;
-            user.aboutMe = req.body.aboutMe || user.aboutMe;
-            user.projects = req.body.projects || user.projects;
-            user.linkedin = req.body.linkedin || user.linkedin;
-            user.github = req.body.github || user.github;
-            user.portfolio = req.body.portfolio || user.portfolio;
+            // Shared fields
+            if (req.body.name        !== undefined) user.name     = req.body.name;
+            if (req.body.location    !== undefined) user.location = req.body.location;
+            if (req.body.linkedin    !== undefined) user.linkedin = req.body.linkedin;
 
-            // Note: userRole cannot be changed by users themselves
-            // Only admins can change userRole
+            // Job-seeker fields
+            if (user.userRole !== 'recruiter') {
+                if (req.body.skills     !== undefined) user.skills     = req.body.skills;
+                if (req.body.experience !== undefined) user.experience = req.body.experience;
+                if (req.body.jobTitle   !== undefined) user.jobTitle   = req.body.jobTitle;
+                if (req.body.education  !== undefined) user.education  = req.body.education;
+                if (req.body.aboutMe    !== undefined) user.aboutMe    = req.body.aboutMe;
+                if (req.body.projects   !== undefined) user.projects   = req.body.projects;
+                if (req.body.github     !== undefined) user.github     = req.body.github;
+                if (req.body.portfolio  !== undefined) user.portfolio  = req.body.portfolio;
+            }
+
+            // Recruiter fields
+            if (user.userRole === 'recruiter') {
+                if (req.body.companyName        !== undefined) user.companyName    = req.body.companyName;
+                if (req.body.companyWebsite     !== undefined) user.companyWebsite = req.body.companyWebsite;
+                if (req.body.phone              !== undefined) user.phone          = req.body.phone;
+                if (req.body.position           !== undefined) user.position       = req.body.position;
+                if (req.body.aboutMe            !== undefined) user.aboutMe        = req.body.aboutMe;
+            }
 
             const updatedUser = await user.save();
 
@@ -192,10 +203,12 @@ const updateUserProfile = async (req, res) => {
                     _id: updatedUser._id,
                     name: updatedUser.name,
                     email: updatedUser.email,
+                    userRole: updatedUser.userRole,
+                    accountStatus: updatedUser.accountStatus,
+                    // Job-seeker fields
                     skills: updatedUser.skills,
                     experience: updatedUser.experience,
                     jobTitle: updatedUser.jobTitle,
-                    userRole: updatedUser.userRole,
                     education: updatedUser.education,
                     location: updatedUser.location,
                     aboutMe: updatedUser.aboutMe,
@@ -203,16 +216,21 @@ const updateUserProfile = async (req, res) => {
                     linkedin: updatedUser.linkedin,
                     github: updatedUser.github,
                     portfolio: updatedUser.portfolio,
+                    // Recruiter fields
+                    companyName: updatedUser.companyName,
+                    companyWebsite: updatedUser.companyWebsite,
+                    phone: updatedUser.phone,
+                    position: updatedUser.position,
                 },
             });
         } else {
             res.status(404).json({ success: false, message: "User not found" });
         }
     } catch (error) {
+        console.error("Update profile error:", error);
         res.status(500).json({
             success: false,
-            message: "Server error updating profile",
-            error: error.message
+            message: "Server error updating profile"
         });
     }
 };

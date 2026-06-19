@@ -1,312 +1,187 @@
 "use client";
-
 import Link from "next/link";
 import { useSelector, useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import { getUserFromLocalStorage, removeUserFromLocalStorage } from "@/services/authService";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Menu, X, LogOut, ChevronDown, Sun, Moon } from "lucide-react";
+import { Menu, X, ChevronDown, LogOut } from "lucide-react";
 import { logout } from "@/redux/slices/authSlice";
 
-const Navbar = () => {
-  const { user, isAuthenticated } = useSelector((state) => state.auth);
-  const router = useRouter();
+// Startup.jobs-style navbar:
+// - Transparent/dark bg
+// - Logo left, nav links centre, single CTA right
+// - No theme toggle (app is dark-only by design)
+
+export default function Navbar() {
+  const { user, isAuthenticated } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
+  const router = useRouter();
 
   const [userData, setUserData] = useState(null);
-  const [isClient, setIsClient] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [browseOpen, setBrowseOpen] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
-    if (!user) {
-      const localUser = getUserFromLocalStorage();
-      setUserData(localUser);
-    } else {
-      setUserData(user);
-    }
-
-    // Check for saved theme preference - default to dark mode
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-      setIsLightMode(true);
-      document.documentElement.classList.add('light');
-    } else {
-      // Explicitly set dark mode as default
-      setIsLightMode(false);
-      document.documentElement.classList.remove('light');
-      if (!savedTheme) {
-        localStorage.setItem('theme', 'dark');
-      }
-    }
+    setUserData(user || getUserFromLocalStorage());
   }, [user]);
 
-  const toggleTheme = () => {
-    setIsLightMode(!isLightMode);
-    if (!isLightMode) {
-      document.documentElement.classList.add('light');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.documentElement.classList.remove('light');
-      localStorage.setItem('theme', 'dark');
-    }
-  };
-
-  // Close dropdown when clicking outside
+  // Close dropdown on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownOpen && !event.target.closest('.dropdown-container')) {
-        setDropdownOpen(false);
-      }
+    const handler = (e) => {
+      if (!e.target.closest("[data-browse-menu]")) setBrowseOpen(false);
     };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [dropdownOpen]);
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const handleLogout = () => {
-    // Remove user from localStorage
     removeUserFromLocalStorage();
-    // Update Redux state
     dispatch(logout());
-    // Redirect to home page
-    setTimeout(() => {
-      router.push("/");
-    }, 100);
-    // Close mobile menu if open
-    if (mobileMenuOpen) setMobileMenuOpen(false);
+    router.push("/");
+    setMobileOpen(false);
   };
 
-  if (!isClient) return null; // Prevent SSR mismatch
+  const dashboardHref =
+    userData?.userRole === "admin"    ? "/admin" :
+    userData?.userRole === "recruiter"? "/recruiter" : "/dashboard";
 
   return (
-    <nav className="sticky top-0 z-50 bg-card text-foreground border-b border-border shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo and Brand */}
-          <div className="flex-shrink-0 flex items-center">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center space-x-2"
-            >
-              <Link href="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full flex items-center justify-center bg-gradient-to-br from-primary to-accent">
-                <span className="font-bold text-white">T</span>
-                </div>
-                <span className="text-xl font-bold text-foreground">TalentAlign</span>
-              </Link>
-            </motion.div>
-          </div>
+    <nav className="sticky top-0 z-50 border-b border-[var(--border)]"
+      style={{ background: "var(--background)" }}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center h-14 gap-8">
 
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center space-x-8">
-            {/* Platform Dropdown */}
-            <div className="relative dropdown-container">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="h-7 w-7 rounded-lg bg-[var(--primary)] flex items-center justify-center">
+              <span className="text-white font-bold text-sm leading-none">T</span>
+            </div>
+            <span className="font-bold text-[var(--foreground)] text-base tracking-tight">
+              TalentAlign
+            </span>
+          </Link>
+
+          {/* Desktop nav links */}
+          <div className="hidden md:flex items-center gap-6 flex-1">
+            {/* Browse Jobs dropdown */}
+            <div className="relative" data-browse-menu>
               <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center space-x-1 text-foreground hover:text-muted-foreground transition-colors"
+                onClick={() => setBrowseOpen(!browseOpen)}
+                className="flex items-center gap-1 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
               >
-                <span>Platform</span>
-                <ChevronDown size={16} className={`transform transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                Browse Jobs
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${browseOpen ? "rotate-180" : ""}`} />
               </button>
 
-              {dropdownOpen && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="absolute top-full left-0 mt-2 w-48 rounded-md shadow-lg bg-card border border-border z-50"
-                >
-                  <div className="py-1">
-                    <Link
-                      href="/#how-it-works"
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      How It Works
+              {browseOpen && (
+                <div className="absolute top-full left-0 mt-2 w-44 rounded-lg border border-[var(--border)] py-1 z-50"
+                  style={{ background: "var(--surface-2)" }}>
+                  {[
+                    { label: "All Jobs", href: "/dashboard" },
+                    { label: "Remote", href: "/dashboard?workMode=remote" },
+                    { label: "Internships", href: "/dashboard?type=internship" },
+                  ].map(({ label, href }) => (
+                    <Link key={href} href={href}
+                      onClick={() => setBrowseOpen(false)}
+                      className="block px-4 py-2 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors">
+                      {label}
                     </Link>
-                    <Link
-                      href="/#why-choose-us"
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Features
-                    </Link>
-                    <Link
-                      href="/#platform-stats"
-                      className="block px-4 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                      onClick={() => setDropdownOpen(false)}
-                    >
-                      Platform Stats
-                    </Link>
-                  </div>
-                </motion.div>
+                  ))}
+                </div>
               )}
             </div>
 
-            {/* Theme Toggle */}
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-foreground hover:bg-muted"
-              aria-label="Toggle theme"
-            >
-              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
-            </motion.button>
-
-            {/* Authentication Links */}
-            {userData || isAuthenticated ? (
-              <>
-                <span className="text-sm text-foreground">Hello, {userData?.name?.split(" ")[0] || "User"}</span>
-                <Link
-                  href={
-                    userData?.userRole === 'admin' ? '/admin' :
-                    userData?.userRole === 'recruiter' ? '/recruiter' :
-                    '/dashboard'
-                  }
-                  className="px-3 py-2 rounded-md text-foreground hover:bg-muted transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleLogout}
-                  className="flex items-center px-3 py-2 rounded-md bg-error hover:bg-error/80 text-white transition-colors"
-                >
-                  <LogOut size={16} className="mr-1" />
-                  Logout
-                </motion.button>
-              </>
-            ) : (
-              <>
-                <Link href="/login" className="px-3 py-2 rounded-md text-foreground hover:bg-muted transition-colors">
-                  Login
-                </Link>
-                <motion.a
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  href="/register"
-                  className="px-4 py-2 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground transition-colors"
-                >
-                  Sign Up
-                </motion.a>
-              </>
-            )}
-          </div>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center gap-2">
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={toggleTheme}
-              className="p-2 rounded-full text-foreground hover:bg-muted"
-              aria-label="Toggle theme"
-            >
-              {isLightMode ? <Moon size={20} /> : <Sun size={20} />}
-            </motion.button>
-            <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary"
-              aria-expanded="false"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="md:hidden bg-card border-b border-border shadow-lg"
-        >
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            <Link
-              href="/#how-it-works"
-              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
-              onClick={toggleMobileMenu}
-            >
+            <Link href="/#how-it-works"
+              className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
               How It Works
             </Link>
-            <Link
-              href="/#why-choose-us"
-              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
-              onClick={toggleMobileMenu}
-            >
-              Features
+            <Link href="/#contact"
+              className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
+              Contact
             </Link>
-            <Link
-              href="/#platform-stats"
-              className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
-              onClick={toggleMobileMenu}
-            >
-              Platform Stats
-            </Link>
+          </div>
 
-            
-            {/* Mobile Authentication Links */}
+          {/* Right side */}
+          <div className="hidden md:flex items-center gap-3 ml-auto">
             {userData || isAuthenticated ? (
               <>
-                <div className="px-3 py-2 font-medium text-sm text-foreground">
-                  Hello, {userData?.name?.split(" ")[0] || "User"}
-                </div>
-                <Link
-                  href={
-                    userData?.userRole === 'admin' ? '/admin' :
-                    userData?.userRole === 'recruiter' ? '/recruiter' :
-                    '/dashboard'
-                  }
-                  className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
-                  onClick={toggleMobileMenu}
-                >
+                <Link href={dashboardHref}
+                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
                   Dashboard
                 </Link>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center w-full px-3 py-2 rounded-md text-base font-medium bg-error hover:bg-error/80 text-white"
-                >
-                  <LogOut size={16} className="mr-1" />
+                <button onClick={handleLogout}
+                  className="flex items-center gap-1.5 text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
+                  <LogOut className="h-3.5 w-3.5" />
                   Logout
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
-                  className="block px-3 py-2 rounded-md text-base font-medium text-foreground hover:bg-muted"
-                  onClick={toggleMobileMenu}
-                >
+                <Link href="/login"
+                  className="text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors">
                   Login
                 </Link>
-                <Link
-                  href="/register"
-                  onClick={toggleMobileMenu}
-                  className="block px-3 py-2 rounded-md text-base font-medium bg-primary hover:bg-primary-hover text-primary-foreground"
-                >
-                  Sign Up
+                <Link href="/register"
+                  className="btn-primary text-sm">
+                  Get Started
                 </Link>
               </>
             )}
           </div>
-        </motion.div>
+
+          {/* Mobile hamburger */}
+          <button onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden ml-auto p-1.5 text-[var(--foreground-muted)] hover:text-[var(--foreground)] transition-colors"
+            aria-label="Toggle menu">
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileOpen && (
+        <div className="md:hidden border-t border-[var(--border)] py-3 px-4 space-y-1"
+          style={{ background: "var(--background)" }}>
+          {[
+            { label: "Browse Jobs", href: "/dashboard" },
+            { label: "How It Works", href: "/#how-it-works" },
+            { label: "Contact", href: "/#contact" },
+          ].map(({ label, href }) => (
+            <Link key={href} href={href}
+              onClick={() => setMobileOpen(false)}
+              className="block py-2 px-3 rounded-md text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors">
+              {label}
+            </Link>
+          ))}
+
+          <div className="pt-2 border-t border-[var(--border)]">
+            {userData || isAuthenticated ? (
+              <>
+                <Link href={dashboardHref} onClick={() => setMobileOpen(false)}
+                  className="block py-2 px-3 rounded-md text-sm text-[var(--foreground-muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface)] transition-colors">
+                  Dashboard
+                </Link>
+                <button onClick={handleLogout}
+                  className="flex items-center gap-2 w-full py-2 px-3 rounded-md text-sm text-[var(--error)] hover:bg-[var(--surface)] transition-colors">
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link href="/login" onClick={() => setMobileOpen(false)}
+                  className="block py-2 px-3 rounded-md text-sm text-[var(--foreground-muted)] hover:bg-[var(--surface)] transition-colors">
+                  Login
+                </Link>
+                <Link href="/register" onClick={() => setMobileOpen(false)}
+                  className="block mt-1 py-2 px-3 rounded-md text-sm text-center btn-primary">
+                  Get Started
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </nav>
   );
-};
-
-export default Navbar;
+}

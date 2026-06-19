@@ -1,37 +1,28 @@
-// Improved AuthGuard.js
 "use client";
 import { useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function AuthGuard({ children }) {
-    const { user, isAuthenticated, hydrated } = useSelector((state) => state.auth);
-    const router = useRouter();
+  const { user, isAuthenticated, hydrated } = useSelector((s) => s.auth);
+  const router = useRouter();
 
-    useEffect(() => {
-        // Wait for hydration to complete
-        if (!hydrated) {
-            return;
-        }
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
-        // After hydration, check if user is authenticated
-        if (!user || !isAuthenticated) {
-            router.push("/");
-        }
-    }, [user, isAuthenticated, hydrated, router]);
+  useEffect(() => {
+    if (!mounted || !hydrated) return;
+    if (!user || !isAuthenticated) router.push("/");
+  }, [mounted, hydrated, user, isAuthenticated, router]);
 
-    // Wait for hydration before showing anything
-    if (!hydrated) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
-                    <p className="mt-4 text-gray-600">Loading...</p>
-                </div>
-            </div>
-        );
-    }
+  // Same shell on server and client — no hydration mismatch
+  if (!mounted || !hydrated) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="spinner h-8 w-8" />
+      </div>
+    );
+  }
 
-    // Show content only if user is authenticated
-    return (user && isAuthenticated) ? children : null;
+  return (user && isAuthenticated) ? <>{children}</> : null;
 }
