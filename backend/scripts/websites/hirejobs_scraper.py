@@ -14,7 +14,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 sys.stdout.reconfigure(encoding="utf-8")
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from scraper_utils import get_collection, generate_job_hash, bulk_upsert_jobs, upload_image_from_url
+from scraper_utils import get_collection, generate_job_hash, bulk_upsert_jobs, upload_image_from_url, filter_jobs
 
 JOB_ROLES = [
     "Software Engineer",
@@ -282,8 +282,12 @@ print("=" * 80)
 print(f"Total collected: {len(all_jobs_data)}")
 
 if all_jobs_data:
-    inserted, dupes = bulk_upsert_jobs(collection, all_jobs_data)
-    print(f"✓ Inserted: {inserted} new  |  Duplicates skipped: {dupes}")
+    print(f"\n🔍  Running quality filter on {len(all_jobs_data)} collected jobs…")
+    valid_jobs, rejected = filter_jobs(all_jobs_data, source="web")
+    print(f"   ✓ Passed: {len(valid_jobs)}  |  ✗ Rejected: {rejected}")
+    if valid_jobs:
+        inserted, dupes = bulk_upsert_jobs(collection, valid_jobs)
+        print(f"   ✓ Inserted: {inserted} new  |  Duplicates skipped: {dupes}")
 else:
     print("⚠ No jobs collected.")
 

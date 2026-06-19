@@ -12,7 +12,7 @@ from pymongo import MongoClient
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(script_dir, ".."))
-from scraper_utils import get_collection, generate_job_hash, bulk_upsert_jobs, upload_image_to_imagekit
+from scraper_utils import get_collection, generate_job_hash, bulk_upsert_jobs, upload_image_to_imagekit, filter_jobs
 
 from telethon.sync import TelegramClient
 
@@ -171,10 +171,14 @@ try:
 except Exception as e:
     print(f"❌ Telegram connection error: {e}")
 
-# ── Save ──────────────────────────────────────────────────────────────────────
+# ── Quality filter + save ─────────────────────────────────────────────────────
 print(f"\nTotal collected: {len(job_posts)}")
 if job_posts:
-    inserted, dupes = bulk_upsert_jobs(collection, job_posts)
-    print(f"✓ Inserted: {inserted} new  |  Duplicates skipped: {dupes}")
+    print("🔍  Running quality filter…")
+    valid_jobs, rejected = filter_jobs(job_posts, source="telegram")
+    print(f"   ✓ Passed: {len(valid_jobs)}  |  ✗ Rejected: {rejected}")
+    if valid_jobs:
+        inserted, dupes = bulk_upsert_jobs(collection, valid_jobs)
+        print(f"   ✓ Inserted: {inserted} new  |  Duplicates skipped: {dupes}")
 else:
     print("⚠ No job posts found.")

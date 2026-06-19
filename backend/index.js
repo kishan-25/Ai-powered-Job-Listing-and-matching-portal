@@ -17,6 +17,8 @@ const adminRoutes = require('./routes/adminRoutes');
 const userRoutes = require('./routes/userRoutes');
 const generateCoverLetterRoute = require("./routes/generateCoverLetter");
 const { protect } = require("./middlewares/authMiddleware");
+const { isAdmin } = require("./middlewares/roleMiddleware");
+const { startScheduler, runAllScrapers } = require("./scheduler");
 
 const app = express();
 
@@ -148,11 +150,22 @@ app.use('/api/v1/recruiter', recruiterRoutes);
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/users', userRoutes);
 
+// ── Manual scraper trigger — admin only ──────────────────────────────────────
+app.post("/api/v1/admin/run-scrapers", protect, isAdmin, (req, res) => {
+    res.json({ success: true, message: "Scraper run started. Check server logs for progress." });
+    runAllScrapers(`manual by ${req.user?.email || "admin"}`).catch((err) => {
+        console.error("Manual scraper run failed:", err.message);
+    });
+});
+
 // Global error handler — must be after all routes
 const errorHandler = require('./middlewares/errorHandler');
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server is running on PORT: ${PORT}`));
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+    console.log(`Server is running on PORT: ${PORT}`);
+    startScheduler();  // weekly cron — every Sunday 2 AM IST
+});
 
 connectDB();
