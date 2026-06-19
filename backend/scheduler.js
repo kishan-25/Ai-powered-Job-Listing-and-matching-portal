@@ -38,12 +38,12 @@ const IS_RENDER = !!process.env.RENDER;
 // requiresBrowser: true  → needs Chrome/Selenium → skipped on Render
 // requiresBrowser: false → pure Python           → always runs
 const ALL_SCRAPERS = [
-  { id: "timesjobs",          name: "TimesJobs",               timeoutMs: 20 * 60_000, requiresBrowser: true,  cmd: `python "${path.join(WEBSITES_DIR, "timesOfJob_scraper.py")}"` },
-  { id: "hirejobs",           name: "HireJobs",                timeoutMs: 25 * 60_000, requiresBrowser: true,  cmd: `python "${path.join(WEBSITES_DIR, "hirejobs_scraper.py")}"` },
-  { id: "instahyre",          name: "Instahyre",               timeoutMs: 20 * 60_000, requiresBrowser: true,  cmd: `python "${path.join(WEBSITES_DIR, "instahyre_scraper.py")}"` },
-  { id: "telegram_techuprise", name: "Telegram — TechUprise",  timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python "${path.join(TELEGRAM_DIR, "techuprise.py")}"` },
-  { id: "telegram_krishan",   name: "Telegram — Krishan Kumar",timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python "${path.join(TELEGRAM_DIR, "krishan_kumar.py")}"` },
-  { id: "telegram_kushal",    name: "Telegram — Kushal Vijay", timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python "${path.join(TELEGRAM_DIR, "kushal_vijay.py")}"` },
+  { id: "timesjobs",          name: "TimesJobs",               timeoutMs: 20 * 60_000, requiresBrowser: true,  cmd: `python3 "${path.join(WEBSITES_DIR, "timesOfJob_scraper.py")}"` },
+  { id: "hirejobs",           name: "HireJobs",                timeoutMs: 25 * 60_000, requiresBrowser: true,  cmd: `python3 "${path.join(WEBSITES_DIR, "hirejobs_scraper.py")}"` },
+  { id: "instahyre",          name: "Instahyre",               timeoutMs: 20 * 60_000, requiresBrowser: true,  cmd: `python3 "${path.join(WEBSITES_DIR, "instahyre_scraper.py")}"` },
+  { id: "telegram_techuprise", name: "Telegram — TechUprise",  timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python3 "${path.join(TELEGRAM_DIR, "techuprise.py")}"` },
+  { id: "telegram_krishan",   name: "Telegram — Krishan Kumar",timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python3 "${path.join(TELEGRAM_DIR, "krishan_kumar.py")}"` },
+  { id: "telegram_kushal",    name: "Telegram — Kushal Vijay", timeoutMs: 10 * 60_000, requiresBrowser: false, cmd: `python3 "${path.join(TELEGRAM_DIR, "kushal_vijay.py")}"` },
 ];
 
 // On Render: only Telegram scrapers (no Chrome available)
