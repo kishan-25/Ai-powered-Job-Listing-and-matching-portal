@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { loginSuccess } from "@/redux/slices/authSlice";
 import { registerUser } from "@/services/authService";
@@ -24,6 +24,15 @@ export default function RegisterPage() {
   const [resumeFile, setResumeFile] = useState(null);
   const [showPw, setShowPw]         = useState(false);
   const [showConfirmPw, setShowConfirmPw] = useState(false);
+  // Ref for the hidden file input — clicked programmatically, never via a <label>
+  const fileInputRef = useRef(null);
+
+  const openFilePicker = (e) => {
+    // Prevent any form submission or event propagation
+    e.preventDefault();
+    e.stopPropagation();
+    fileInputRef.current?.click();
+  };
 
   const dispatch = useDispatch();
   const router   = useRouter();
@@ -286,34 +295,52 @@ export default function RegisterPage() {
                 </div>
 
                 {/* ── Resume upload ── */}
+                {/*
+                  IMPORTANT: Never use <label> wrapping a file input inside a <form>.
+                  The label click event bubbles up and can accidentally trigger form
+                  submission. Instead: hidden input with useRef + type="button" trigger.
+                */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.doc,.docx"
+                  onChange={handleResume}
+                  disabled={parsing}
+                  className="hidden"
+                  aria-label="Upload resume"
+                />
+
                 <div>
                   {!resumeFile ? (
                     /* Drop zone — pre-upload */
-                    <label
-                      className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl cursor-pointer transition-all group"
-                      style={{
-                        border: "2px dashed rgba(255,255,255,0.12)",
-                        background: "var(--surface-2)",
-                      }}
+                    <div
+                      className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl cursor-pointer transition-all"
+                      style={{ border: "2px dashed rgba(255,255,255,0.12)", background: "var(--surface-2)" }}
+                      onClick={openFilePicker}
                       onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(13,81,255,0.5)"; e.currentTarget.style.background = "rgba(13,81,255,0.04)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.background = "var(--surface-2)"; }}
                     >
-                      <div className="h-12 w-12 rounded-xl flex items-center justify-center transition-colors"
+                      <div className="h-12 w-12 rounded-xl flex items-center justify-center pointer-events-none"
                         style={{ background: "rgba(13,81,255,0.1)" }}>
                         <Upload className="h-5 w-5" style={{ color: "var(--primary)" }} />
                       </div>
-                      <div className="text-center">
+                      <div className="text-center pointer-events-none">
                         <p className="text-sm font-semibold text-foreground">Upload your resume</p>
                         <p className="text-xs mt-0.5" style={{ color: "var(--foreground-muted)" }}>
                           PDF or Word · max 5 MB · skills auto-extracted
                         </p>
                       </div>
-                      <span className="text-xs font-semibold px-4 py-2 rounded-lg transition-colors"
-                        style={{ background: "var(--primary)", color: "#fff" }}>
+                      {/* type="button" is CRITICAL — prevents accidental form submission */}
+                      <button
+                        type="button"
+                        onClick={openFilePicker}
+                        disabled={parsing}
+                        className="text-xs font-semibold px-4 py-2 rounded-lg transition-colors pointer-events-auto"
+                        style={{ background: "var(--primary)", color: "#fff" }}
+                      >
                         Choose file
-                      </span>
-                      <input type="file" accept=".pdf,.doc,.docx" onChange={handleResume} disabled={parsing} className="hidden" />
-                    </label>
+                      </button>
+                    </div>
                   ) : parsing ? (
                     /* Parsing state */
                     <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl"
@@ -346,13 +373,17 @@ export default function RegisterPage() {
                               : "Parsed — add skills manually below"}
                           </p>
                         </div>
-                        <label className="text-xs font-medium cursor-pointer transition-colors shrink-0"
+                        {/* type="button" — critical */}
+                        <button
+                          type="button"
+                          onClick={openFilePicker}
+                          className="text-xs font-medium transition-colors shrink-0"
                           style={{ color: "var(--foreground-muted)" }}
                           onMouseEnter={(e) => { e.currentTarget.style.color = "var(--foreground)"; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--foreground-muted)"; }}>
+                          onMouseLeave={(e) => { e.currentTarget.style.color = "var(--foreground-muted)"; }}
+                        >
                           Change
-                          <input type="file" accept=".pdf,.doc,.docx" onChange={handleResume} className="hidden" />
-                        </label>
+                        </button>
                       </div>
                     </div>
                   )}
